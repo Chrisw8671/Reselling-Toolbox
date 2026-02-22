@@ -9,7 +9,6 @@ datasource db {
 
 enum StockStatus {
   IN_STOCK
-  LISTED
   SOLD
   RETURNED
   WRITTEN_OFF
@@ -48,31 +47,37 @@ model Purchase {
 }
 
 model StockUnit {
-  id           String     @id @default(uuid())
-  sku          String     @unique
+  id            String      @id @default(uuid())
+  sku           String      @unique
   titleOverride String?
-  condition    String?
-  purchaseCost Decimal    @default(0)
-  extraCost    Decimal    @default(0)
-  status       StockStatus @default(IN_STOCK)
-  purchasedAt  DateTime   @default(now())
-  notes        String?
-  createdAt    DateTime   @default(now())
+  condition     String?
+  purchaseCost  Decimal     @default(0)
+  extraCost     Decimal     @default(0)
+  status        StockStatus @default(IN_STOCK)
+  purchasedAt   DateTime    @default(now())
+  notes         String?
+  createdAt     DateTime    @default(now())
 
-  productId    String?
-  product      Product?   @relation(fields: [productId], references: [id])
+  // ✅ NEW FIELDS (for buying/selling online)
+  purchasedFrom String?
+  purchaseRef   String?
+  purchaseUrl   String?
+  brand         String?
+  size          String?
 
-  purchaseId   String?
-  purchase     Purchase?  @relation(fields: [purchaseId], references: [id])
+  productId String?
+  product   Product?  @relation(fields: [productId], references: [id])
 
-  locationId   String? 
-  location     Location?  @relation(fields: [locationId], references: [id])
+  purchaseId String?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
 
-  saleLine     SaleLine?
-  
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+
+  saleLine SaleLine?
+
   archived   Boolean   @default(false)
   archivedAt DateTime?
-
 }
 
 model Sale {
@@ -86,7 +91,7 @@ model Sale {
   otherCosts      Decimal  @default(0)
   notes           String?
   createdAt       DateTime @default(now())
-  archived        Boolean   @default(false)
+  archived        Boolean  @default(false)
   archivedAt      DateTime?
 
   lines SaleLine[]

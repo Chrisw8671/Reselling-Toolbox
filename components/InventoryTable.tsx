@@ -8,9 +8,16 @@ type Item = {
   sku: string;
   titleOverride: string | null;
   status: string;
+
   purchaseCost: number;
   createdAt: string; // ISO string
   location: { code: string } | null;
+
+  // ✅ new fields (optional)
+  purchasedFrom?: string | null;
+  purchaseRef?: string | null;
+  brand?: string | null;
+  size?: string | null;
 };
 
 export default function InventoryTable({ items }: { items: Item[] }) {
@@ -68,7 +75,14 @@ export default function InventoryTable({ items }: { items: Item[] }) {
   return (
     <div className="tableWrap">
       {/* Bulk actions row */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: 12,
+        }}
+      >
         <div className="muted" style={{ fontSize: 13 }}>
           {items.length} item(s) • Selected: {selectedSkus.length}
         </div>
@@ -91,15 +105,47 @@ export default function InventoryTable({ items }: { items: Item[] }) {
           <thead className="thead">
             <tr>
               <th className="th" style={{ width: 44 }}>
-                <input type="checkbox" checked={allChecked} onChange={toggleAll} />
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  onChange={toggleAll}
+                />
               </th>
-              <th className="th" style={{ width: 170 }}>SKU</th>
+
+              <th className="th" style={{ width: 170 }}>
+                SKU
+              </th>
               <th className="th">Title</th>
-              <th className="th" style={{ width: 150 }}>Status</th>
-              <th className="th" style={{ width: 110 }}>Loc</th>
-              <th className="th" style={{ width: 120 }}>Cost</th>
-              <th className="th" style={{ width: 170 }}>Created</th>
-              <th className="th" style={{ width: 160, textAlign: "right" }}>Actions</th>
+
+              {/* ✅ new columns */}
+              <th className="th" style={{ width: 160 }}>
+                Purchased From
+              </th>
+              <th className="th" style={{ width: 170 }}>
+                Purchase Ref
+              </th>
+              <th className="th" style={{ width: 140 }}>
+                Brand
+              </th>
+              <th className="th" style={{ width: 120 }}>
+                Size
+              </th>
+
+              <th className="th" style={{ width: 150 }}>
+                Status
+              </th>
+              <th className="th" style={{ width: 110 }}>
+                Loc
+              </th>
+              <th className="th" style={{ width: 120 }}>
+                Cost
+              </th>
+              <th className="th" style={{ width: 170 }}>
+                Created
+              </th>
+              <th className="th" style={{ width: 160, textAlign: "right" }}>
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -108,7 +154,9 @@ export default function InventoryTable({ items }: { items: Item[] }) {
               <tr
                 className="tr rowClick"
                 key={it.sku}
-                onClick={() => router.push(`/inventory/${encodeURIComponent(it.sku)}`)}
+                onClick={() =>
+                  router.push(`/inventory/${encodeURIComponent(it.sku)}`)
+                }
               >
                 <td className="td" onClick={(e) => e.stopPropagation()}>
                   <input
@@ -124,23 +172,47 @@ export default function InventoryTable({ items }: { items: Item[] }) {
                   {it.titleOverride ?? <span className="muted">—</span>}
                 </td>
 
+                {/* ✅ new fields */}
                 <td className="td">
-                  <span className={`badge ${it.status}`}>{formatStatus(it.status)}</span>
+                  {it.purchasedFrom ? it.purchasedFrom : <span className="muted">—</span>}
+                </td>
+                <td className="td">
+                  {it.purchaseRef ? it.purchaseRef : <span className="muted">—</span>}
+                </td>
+                <td className="td">
+                  {it.brand ? it.brand : <span className="muted">—</span>}
+                </td>
+                <td className="td">
+                  {it.size ? it.size : <span className="muted">—</span>}
                 </td>
 
-                <td className="td">{it.location?.code ?? <span className="muted">—</span>}</td>
+                <td className="td">
+                  <span className={`badge ${it.status}`}>
+                    {formatStatus(it.status)}
+                  </span>
+                </td>
+
+                <td className="td">
+                  {it.location?.code ?? <span className="muted">—</span>}
+                </td>
 
                 <td className="td">£{it.purchaseCost.toFixed(2)}</td>
 
                 <td className="td">{formatDate(it.createdAt)}</td>
 
-                <td className="td" style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                <td
+                  className="td"
+                  style={{ textAlign: "right" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="actions">
                     <button
                       className="iconBtn"
                       title="Edit"
                       type="button"
-                      onClick={() => router.push(`/inventory/${encodeURIComponent(it.sku)}`)}
+                      onClick={() =>
+                        router.push(`/inventory/${encodeURIComponent(it.sku)}`)
+                      }
                     >
                       ✎
                     </button>
@@ -196,7 +268,7 @@ export default function InventoryTable({ items }: { items: Item[] }) {
 
             {items.length === 0 && (
               <tr className="tr">
-                <td className="td muted" colSpan={8}>
+                <td className="td muted" colSpan={12}>
                   No matching items.
                 </td>
               </tr>

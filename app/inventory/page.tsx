@@ -27,6 +27,14 @@ export default async function InventoryPage({ searchParams }: Props) {
     where.OR = [
       { sku: { contains: q, mode: "insensitive" } },
       { titleOverride: { contains: q, mode: "insensitive" } },
+      { condition: { contains: q, mode: "insensitive" } },
+
+      // ✅ new searchable fields
+      { purchasedFrom: { contains: q, mode: "insensitive" } },
+      { purchaseRef: { contains: q, mode: "insensitive" } },
+      { brand: { contains: q, mode: "insensitive" } },
+      { size: { contains: q, mode: "insensitive" } },
+
       { location: { is: { code: { contains: q, mode: "insensitive" } } } },
     ];
   }
@@ -40,6 +48,14 @@ export default async function InventoryPage({ searchParams }: Props) {
       titleOverride: true,
       status: true,
       purchaseCost: true,
+      extraCost: true,
+      condition: true,
+      purchasedAt: true,
+      purchasedFrom: true,
+      purchaseRef: true,
+      purchaseUrl: true,
+      brand: true,
+      size: true,
       createdAt: true,
       location: { select: { code: true } },
     },
@@ -51,6 +67,14 @@ export default async function InventoryPage({ searchParams }: Props) {
     titleOverride: it.titleOverride,
     status: it.status,
     purchaseCost: Number(it.purchaseCost),
+    extraCost: Number(it.extraCost ?? 0),
+    condition: it.condition ?? "",
+    purchasedAt: it.purchasedAt ? it.purchasedAt.toISOString() : null,
+    purchasedFrom: it.purchasedFrom ?? "",
+    purchaseRef: it.purchaseRef ?? "",
+    purchaseUrl: it.purchaseUrl ?? "",
+    brand: it.brand ?? "",
+    size: it.size ?? "",
     createdAt: it.createdAt.toISOString(),
     location: it.location ? { code: it.location.code } : null,
   }));
@@ -66,8 +90,9 @@ export default async function InventoryPage({ searchParams }: Props) {
     in_stock: "1",
   }).toString()}`;
 
-  const inStockOffHref =
-    qsBase.toString() ? `/inventory?${qsBase.toString()}` : "/inventory";
+  const inStockOffHref = qsBase.toString()
+    ? `/inventory?${qsBase.toString()}`
+    : "/inventory";
 
   return (
     <div className="container">
@@ -113,11 +138,11 @@ export default async function InventoryPage({ searchParams }: Props) {
           }}
         >
           <label style={{ flex: "1 1 320px" }}>
-            Search (SKU, title, location)
+            Search (SKU, title, location, purchase info)
             <input
               name="q"
               defaultValue={q}
-              placeholder='e.g. 2602-00041 or "Nike hoodie" or "BOX-01"'
+              placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
               style={{ width: "100%" }}
             />
           </label>
@@ -143,9 +168,7 @@ export default async function InventoryPage({ searchParams }: Props) {
             </select>
           </label>
 
-          {inStock && (
-            <input type="hidden" name="in_stock" value="1" />
-          )}
+          {inStock && <input type="hidden" name="in_stock" value="1" />}
 
           <button className="btn" type="submit">
             Apply
