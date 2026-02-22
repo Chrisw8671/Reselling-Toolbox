@@ -43,12 +43,7 @@ const PURCHASED_FROM_OPTIONS = [
   "Other",
 ] as const;
 
-type MissingKey =
-  | "title"
-  | "condition"
-  | "brand"
-  | "purchaseCost"
-  | "purchasedFrom";
+type MissingKey = "title" | "condition" | "brand" | "purchaseCost" | "purchasedFrom";
 
 const MISSING_LABEL: Record<MissingKey, string> = {
   title: "Title",
@@ -74,9 +69,7 @@ export default function NewInventoryPage() {
 
   const [purchaseCost, setPurchaseCost] = useState("0");
   const [extraCost, setExtraCost] = useState("0");
-  const [purchasedAt, setPurchasedAt] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [purchasedAt, setPurchasedAt] = useState(new Date().toISOString().slice(0, 10));
 
   // ✅ Location now driven by dropdown + optional custom input
   const [locations, setLocations] = useState<LocationOption[]>([]);
@@ -86,8 +79,9 @@ export default function NewInventoryPage() {
 
   const [notes, setNotes] = useState("");
 
-  const [purchasedFromChoice, setPurchasedFromChoice] =
-    useState<(typeof PURCHASED_FROM_OPTIONS)[number] | "">("");
+  const [purchasedFromChoice, setPurchasedFromChoice] = useState<
+    (typeof PURCHASED_FROM_OPTIONS)[number] | ""
+  >("");
   const [purchasedFromOther, setPurchasedFromOther] = useState("");
 
   const [purchaseRef, setPurchaseRef] = useState("");
@@ -122,7 +116,7 @@ export default function NewInventoryPage() {
           data.locations.map((l: any) => ({
             code: String(l.code),
             label: String(l.label ?? l.code),
-          }))
+          })),
         );
       }
     }
@@ -159,16 +153,21 @@ export default function NewInventoryPage() {
       setMsg((prev) => (prev.startsWith("Missing:") ? "" : prev));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [titleOverride, condition, brand, purchaseCost, purchasedFromChoice, purchasedFromOther]);
+  }, [
+    titleOverride,
+    condition,
+    brand,
+    purchaseCost,
+    purchasedFromChoice,
+    purchasedFromOther,
+  ]);
 
   function hasMissing(key: MissingKey) {
     return missingFields.includes(key);
   }
 
   const requiredStar = (key: MissingKey) =>
-    hasMissing(key) ? (
-      <span style={{ color: "red", marginLeft: 6 }}>*</span>
-    ) : null;
+    hasMissing(key) ? <span style={{ color: "red", marginLeft: 6 }}>*</span> : null;
 
   async function save() {
     const missing = computeMissing();
@@ -177,7 +176,7 @@ export default function NewInventoryPage() {
       setMissingFields(missing);
       alert(
         "Please fill in the following required field(s):\n\n" +
-          missing.map((k) => `• ${MISSING_LABEL[k]}`).join("\n")
+          missing.map((k) => `• ${MISSING_LABEL[k]}`).join("\n"),
       );
       setMsg("Missing: " + missing.map((k) => MISSING_LABEL[k]).join(", "));
       return;
@@ -186,9 +185,7 @@ export default function NewInventoryPage() {
     setMsg("");
 
     const purchasedFrom =
-      purchasedFromChoice === "Other"
-        ? purchasedFromOther.trim()
-        : purchasedFromChoice;
+      purchasedFromChoice === "Other" ? purchasedFromOther.trim() : purchasedFromChoice;
 
     const costNum = Number(purchaseCost);
 
@@ -254,9 +251,7 @@ export default function NewInventoryPage() {
     <div className="container">
       <div className="toolbar">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
-            New Inventory Item
-          </h1>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>New Inventory Item</h1>
           <div className="muted" style={{ marginTop: 6 }}>
             SKU: {sku || "Generating..."}
           </div>
@@ -410,7 +405,7 @@ export default function NewInventoryPage() {
                 value={purchasedFromChoice}
                 onChange={(e) =>
                   setPurchasedFromChoice(
-                    e.target.value as (typeof PURCHASED_FROM_OPTIONS)[number] | ""
+                    e.target.value as (typeof PURCHASED_FROM_OPTIONS)[number] | "",
                   )
                 }
               >
@@ -438,7 +433,10 @@ export default function NewInventoryPage() {
 
             <label>
               Purchase ref
-              <input value={purchaseRef} onChange={(e) => setPurchaseRef(e.target.value)} />
+              <input
+                value={purchaseRef}
+                onChange={(e) => setPurchaseRef(e.target.value)}
+              />
             </label>
 
             <label style={{ gridColumn: "1 / -1" }}>

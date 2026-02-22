@@ -35,7 +35,9 @@ export default async function LocationsPage() {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Link className="btn" href="/inventory">← Inventory</Link>
+          <Link className="btn" href="/inventory">
+            ← Inventory
+          </Link>
         </div>
       </div>
 

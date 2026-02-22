@@ -22,8 +22,11 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
 
   const selectedIds = useMemo(
-    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
-    [selected]
+    () =>
+      Object.entries(selected)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
+    [selected],
   );
 
   const allChecked = items.length > 0 && selectedIds.length === items.length;
@@ -82,7 +85,9 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
 
   return (
     <div className="tableWrap">
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}>
+      <div
+        style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}
+      >
         <div className="muted" style={{ fontSize: 13 }}>
           {items.length} archived item(s)
         </div>
@@ -104,11 +109,19 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
             <th className="th" style={{ width: 44 }}>
               <input type="checkbox" checked={allChecked} onChange={toggleAll} />
             </th>
-            <th className="th" style={{ width: 170 }}>SKU</th>
+            <th className="th" style={{ width: 170 }}>
+              SKU
+            </th>
             <th className="th">Title</th>
-            <th className="th" style={{ width: 120 }}>Loc</th>
-            <th className="th" style={{ width: 190 }}>Archived</th>
-            <th className="th" style={{ width: 120, textAlign: "right" }}>Action</th>
+            <th className="th" style={{ width: 120 }}>
+              Loc
+            </th>
+            <th className="th" style={{ width: 190 }}>
+              Archived
+            </th>
+            <th className="th" style={{ width: 120, textAlign: "right" }}>
+              Action
+            </th>
           </tr>
         </thead>
 
@@ -123,7 +136,10 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
                 />
               </td>
 
-              <td className="td" style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+              <td
+                className="td"
+                style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
+              >
                 {it.sku}
               </td>
 
@@ -131,7 +147,9 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
                 {it.titleOverride ?? <span className="muted">—</span>}
               </td>
 
-              <td className="td">{it.location?.code ?? <span className="muted">—</span>}</td>
+              <td className="td">
+                {it.location?.code ?? <span className="muted">—</span>}
+              </td>
 
               <td className="td">{formatDate(it.archivedAt ?? it.createdAt)}</td>
 
@@ -190,14 +208,22 @@ function ConfirmModal({
       <div className="modalCard">
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Permanently delete?</h2>
         <p className="muted" style={{ marginTop: 8 }}>
-          You are about to permanently delete <b>{count}</b> item{count === 1 ? "" : "s"}. This cannot be undone.
+          You are about to permanently delete <b>{count}</b> item{count === 1 ? "" : "s"}.
+          This cannot be undone.
         </p>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}>
+        <div
+          style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}
+        >
           <button className="btn" type="button" disabled={busy} onClick={onCancel}>
             Cancel
           </button>
-          <button className="btn" type="button" disabled={busy || count === 0} onClick={onConfirm}>
+          <button
+            className="btn"
+            type="button"
+            disabled={busy || count === 0}
+            onClick={onConfirm}
+          >
             {busy ? "Deleting..." : "Yes, delete"}
           </button>
         </div>

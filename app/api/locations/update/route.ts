@@ -5,7 +5,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const id = String(body?.id ?? "").trim();
-    const code = String(body?.code ?? "").trim().toUpperCase();
+    const code = String(body?.code ?? "")
+      .trim()
+      .toUpperCase();
     const type = String(body?.type ?? "Box").trim() || "Box";
     const notes = body?.notes ?? null;
 

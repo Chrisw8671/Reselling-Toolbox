@@ -6,8 +6,6 @@ import Navbar from "@/components/Navbar";
 import { Inter } from "next/font/google";
 import { AccountIcon, SettingsCogIcon } from "@/components/Icons";
 
-
-
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
@@ -47,8 +45,7 @@ function IconLink({
     <Link
       href={href}
       aria-label={label}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white hover:bg-gray-50 transition
-                 text-gray-700 hover:text-gray-900"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white text-gray-700 transition hover:bg-gray-50 hover:text-gray-900"
     >
       {children}
     </Link>
@@ -62,4 +59,4 @@ function IconLink({
   <IconLink href="/settings" label="Settings">
     <SettingsCogIcon />
   </IconLink>
-</div>
+</div>;

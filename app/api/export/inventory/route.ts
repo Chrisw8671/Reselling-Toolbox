@@ -74,7 +74,9 @@ export async function GET() {
         notes: it.notes ?? "",
         createdAt: it.createdAt.toISOString().slice(0, 19).replace("T", " "),
         archived: it.archived ? "Yes" : "No",
-        archivedAt: it.archivedAt ? it.archivedAt.toISOString().slice(0, 19).replace("T", " ") : "",
+        archivedAt: it.archivedAt
+          ? it.archivedAt.toISOString().slice(0, 19).replace("T", " ")
+          : "",
       });
     }
 
@@ -91,9 +93,6 @@ export async function GET() {
       },
     });
   } catch (e: any) {
-    return NextResponse.json(
-      { error: e?.message ?? "Export failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: e?.message ?? "Export failed" }, { status: 500 });
   }
 }

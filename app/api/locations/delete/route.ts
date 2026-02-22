@@ -12,7 +12,7 @@ export async function DELETE(req: Request) {
     if (inUse > 0) {
       return NextResponse.json(
         { error: "Location is in use and cannot be deleted." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

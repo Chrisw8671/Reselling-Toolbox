@@ -115,7 +115,9 @@ export default function SettingsPage() {
 
       {/* Reference Data */}
       <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Reference Data</div>
+        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>
+          Reference Data
+        </div>
         <div className="muted" style={{ marginBottom: 12 }}>
           Manage reusable lists used across the app.
         </div>

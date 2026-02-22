@@ -27,8 +27,11 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
   const [busy, setBusy] = useState(false);
 
   const selectedIds = useMemo(
-    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
-    [selected]
+    () =>
+      Object.entries(selected)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
+    [selected],
   );
 
   const allChecked = rows.length > 0 && selectedIds.length === rows.length;
@@ -119,12 +122,21 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
   return (
     <div className="tableWrap">
       {/* Bulk actions row */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}>
+      <div
+        style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}
+      >
         <div className="muted" style={{ fontSize: 13 }}>
           {rows.length} archived sale(s) • Selected: {selectedIds.length}
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
           <button
             className="btn"
             type="button"
@@ -155,15 +167,33 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
                 <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
 
-              <th className="th" style={{ width: 150 }}>Platform</th>
-              <th className="th" style={{ width: 180 }}>Sale date</th>
-              <th className="th" style={{ width: 220 }}>Order ref</th>
-              <th className="th" style={{ width: 90 }}>Items</th>
-              <th className="th" style={{ width: 120 }}>Revenue</th>
-              <th className="th" style={{ width: 120 }}>Costs</th>
-              <th className="th" style={{ width: 120 }}>Profit</th>
-              <th className="th" style={{ width: 180 }}>Archived</th>
-              <th className="th" style={{ width: 160, textAlign: "right" }}>Actions</th>
+              <th className="th" style={{ width: 150 }}>
+                Platform
+              </th>
+              <th className="th" style={{ width: 180 }}>
+                Sale date
+              </th>
+              <th className="th" style={{ width: 220 }}>
+                Order ref
+              </th>
+              <th className="th" style={{ width: 90 }}>
+                Items
+              </th>
+              <th className="th" style={{ width: 120 }}>
+                Revenue
+              </th>
+              <th className="th" style={{ width: 120 }}>
+                Costs
+              </th>
+              <th className="th" style={{ width: 120 }}>
+                Profit
+              </th>
+              <th className="th" style={{ width: 180 }}>
+                Archived
+              </th>
+              <th className="th" style={{ width: 160, textAlign: "right" }}>
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -196,7 +226,11 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
 
                 <td className="td">{formatDate(r.archivedAt ?? r.saleDate)}</td>
 
-                <td className="td" style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                <td
+                  className="td"
+                  style={{ textAlign: "right" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="actions">
                     <button
                       className="iconBtn"
@@ -246,10 +280,23 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
               Permanently delete?
             </h2>
             <p className="muted" style={{ marginTop: 8 }}>
-              You are about to permanently delete <b>{selectedIds.length}</b> sale(s). This cannot be undone.
+              You are about to permanently delete <b>{selectedIds.length}</b> sale(s).
+              This cannot be undone.
             </p>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}>
-              <button className="btn" type="button" disabled={busy} onClick={() => setConfirmOpen(false)}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 14,
+              }}
+            >
+              <button
+                className="btn"
+                type="button"
+                disabled={busy}
+                onClick={() => setConfirmOpen(false)}
+              >
                 Cancel
               </button>
               <button

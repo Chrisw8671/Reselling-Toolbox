@@ -54,17 +54,19 @@ export async function POST(req: Request) {
       condition: condition === undefined ? undefined : condition,
       notes: notes === undefined ? undefined : notes,
       status: status === undefined ? undefined : (status as any),
-      purchaseCost: purchaseCost === undefined || purchaseCost === null ? undefined : purchaseCost,
+      purchaseCost:
+        purchaseCost === undefined || purchaseCost === null ? undefined : purchaseCost,
       extraCost: extraCost === undefined || extraCost === null ? undefined : extraCost,
-      purchasedAt: purchasedAt === undefined || !purchasedAt ? undefined : new Date(purchasedAt),
+      purchasedAt:
+        purchasedAt === undefined || !purchasedAt ? undefined : new Date(purchasedAt),
       locationId,
       archived: archived === undefined || archived === null ? undefined : archived,
       archivedAt:
         archived === undefined || archived === null
           ? undefined
           : archived
-          ? new Date()
-          : null,
+            ? new Date()
+            : null,
     },
   });
 

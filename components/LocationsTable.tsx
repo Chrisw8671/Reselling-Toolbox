@@ -181,12 +181,22 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
         <table className="table">
           <thead className="thead">
             <tr>
-              <th className="th" style={{ width: 170 }}>Code</th>
-              <th className="th" style={{ width: 140 }}>Type</th>
+              <th className="th" style={{ width: 170 }}>
+                Code
+              </th>
+              <th className="th" style={{ width: 140 }}>
+                Type
+              </th>
               <th className="th">Description</th>
-              <th className="th" style={{ width: 90 }}>In use</th>
-              <th className="th" style={{ width: 170 }}>Created</th>
-              <th className="th" style={{ width: 170, textAlign: "right" }}>Actions</th>
+              <th className="th" style={{ width: 90 }}>
+                In use
+              </th>
+              <th className="th" style={{ width: 170 }}>
+                Created
+              </th>
+              <th className="th" style={{ width: 170, textAlign: "right" }}>
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -198,7 +208,11 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                 <tr key={r.id} className="tr">
                   <td className="td">
                     {isEdit ? (
-                      <input value={editCode} onChange={(e) => setEditCode(e.target.value)} disabled={busy} />
+                      <input
+                        value={editCode}
+                        onChange={(e) => setEditCode(e.target.value)}
+                        disabled={busy}
+                      />
                     ) : (
                       r.code
                     )}
@@ -206,7 +220,11 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
 
                   <td className="td">
                     {isEdit ? (
-                      <input value={editType} onChange={(e) => setEditType(e.target.value)} disabled={busy} />
+                      <input
+                        value={editType}
+                        onChange={(e) => setEditType(e.target.value)}
+                        disabled={busy}
+                      />
                     ) : (
                       r.type
                     )}
@@ -214,7 +232,11 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
 
                   <td className="td">
                     {isEdit ? (
-                      <input value={editNotes} onChange={(e) => setEditNotes(e.target.value)} disabled={busy} />
+                      <input
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        disabled={busy}
+                      />
                     ) : (
                       r.notes || <span className="muted">—</span>
                     )}
@@ -226,7 +248,12 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                   <td className="td" style={{ textAlign: "right" }}>
                     {!isEdit ? (
                       <div className="actions">
-                        <button className="iconBtn" type="button" disabled={busy} onClick={() => startEdit(r)}>
+                        <button
+                          className="iconBtn"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => startEdit(r)}
+                        >
                           ✎
                         </button>
                         <button
@@ -241,10 +268,20 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                       </div>
                     ) : (
                       <div className="actions">
-                        <button className="btn" type="button" disabled={busy} onClick={cancelEdit}>
+                        <button
+                          className="btn"
+                          type="button"
+                          disabled={busy}
+                          onClick={cancelEdit}
+                        >
                           Cancel
                         </button>
-                        <button className="btn primary" type="button" disabled={busy} onClick={() => saveEdit(r.id)}>
+                        <button
+                          className="btn primary"
+                          type="button"
+                          disabled={busy}
+                          onClick={() => saveEdit(r.id)}
+                        >
                           Save
                         </button>
                       </div>

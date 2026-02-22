@@ -98,9 +98,7 @@ export default async function InventoryPage({ searchParams }: Props) {
     <div className="container">
       <div className="toolbar">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
-            Inventory
-          </h1>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Inventory</h1>
           <div className="muted" style={{ marginTop: 4 }}>
             {itemsPlain.length} item(s)
             {(q || status) && (
@@ -155,9 +153,7 @@ export default async function InventoryPage({ searchParams }: Props) {
               style={{ width: "100%" }}
               disabled={inStock}
               title={
-                inStock
-                  ? "Turn off In Stock only to change status filter"
-                  : undefined
+                inStock ? "Turn off In Stock only to change status filter" : undefined
               }
             >
               {statuses.map((s) => (

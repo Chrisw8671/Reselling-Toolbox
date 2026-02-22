@@ -66,7 +66,7 @@ export default async function SalesPage({ searchParams }: Props) {
     const itemsTotal = s.lines.reduce((sum, l) => sum + Number(l.salePrice), 0);
     const purchaseTotal = s.lines.reduce(
       (sum, l) => sum + Number(l.stockUnit.purchaseCost),
-      0
+      0,
     );
 
     const shippingCharged = Number(s.shippingCharged);
@@ -110,9 +110,7 @@ export default async function SalesPage({ searchParams }: Props) {
     this_month: "1",
   }).toString()}`;
 
-  const thisMonthOffHref = qsBase.toString()
-    ? `/sales?${qsBase.toString()}`
-    : "/sales";
+  const thisMonthOffHref = qsBase.toString() ? `/sales?${qsBase.toString()}` : "/sales";
 
   return (
     <div className="container">
@@ -141,7 +139,6 @@ export default async function SalesPage({ searchParams }: Props) {
           <Link className="btn" href="/sales/new">
             + Create Sale
           </Link>
-
         </div>
       </div>
 
@@ -196,8 +193,8 @@ export default async function SalesPage({ searchParams }: Props) {
       <SalesTable rows={rows} />
 
       <div className="muted" style={{ marginTop: 12 }}>
-        Profit: (item prices + shipping charged) − (purchase costs + fees + shipping
-        cost + other costs).
+        Profit: (item prices + shipping charged) − (purchase costs + fees + shipping cost
+        + other costs).
       </div>
     </div>
   );

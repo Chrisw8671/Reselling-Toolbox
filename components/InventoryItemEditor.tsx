@@ -233,7 +233,12 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           </button>
         ) : (
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn" type="button" disabled={busy} onClick={discardChanges}>
+            <button
+              className="btn"
+              type="button"
+              disabled={busy}
+              onClick={discardChanges}
+            >
               Discard changes
             </button>
             <button

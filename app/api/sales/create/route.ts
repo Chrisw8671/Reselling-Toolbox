@@ -26,15 +26,21 @@ export async function POST(req: Request) {
     lines: Line[];
   };
 
-  if (!platform?.trim()) return NextResponse.json({ error: "Platform is required" }, { status: 400 });
+  if (!platform?.trim())
+    return NextResponse.json({ error: "Platform is required" }, { status: 400 });
   if (!Array.isArray(lines) || lines.length === 0) {
-    return NextResponse.json({ error: "Add at least 1 item to the sale" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Add at least 1 item to the sale" },
+      { status: 400 },
+    );
   }
 
   // basic validation
   for (const l of lines) {
-    if (!l.stockUnitId) return NextResponse.json({ error: "Invalid line item" }, { status: 400 });
-    if (!Number.isFinite(l.salePrice)) return NextResponse.json({ error: "Sale price must be a number" }, { status: 400 });
+    if (!l.stockUnitId)
+      return NextResponse.json({ error: "Invalid line item" }, { status: 400 });
+    if (!Number.isFinite(l.salePrice))
+      return NextResponse.json({ error: "Sale price must be a number" }, { status: 400 });
   }
 
   const sale = await prisma.$transaction(async (tx) => {

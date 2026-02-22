@@ -28,7 +28,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message ?? "Failed to update sale" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

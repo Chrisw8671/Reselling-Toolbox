@@ -69,10 +69,17 @@ export default async function ReportsPage() {
   // ----- KPI helpers -----
   function profitForSale(s: (typeof sales)[number]) {
     const itemsTotal = s.lines.reduce((sum, l) => sum + Number(l.salePrice), 0);
-    const purchaseTotal = s.lines.reduce((sum, l) => sum + Number(l.stockUnit.purchaseCost), 0);
+    const purchaseTotal = s.lines.reduce(
+      (sum, l) => sum + Number(l.stockUnit.purchaseCost),
+      0,
+    );
 
     const revenue = itemsTotal + Number(s.shippingCharged);
-    const costs = purchaseTotal + Number(s.platformFees) + Number(s.shippingCost) + Number(s.otherCosts);
+    const costs =
+      purchaseTotal +
+      Number(s.platformFees) +
+      Number(s.shippingCost) +
+      Number(s.otherCosts);
 
     return revenue - costs;
   }
@@ -80,9 +87,16 @@ export default async function ReportsPage() {
   const totalProfit = sales.reduce((sum, s) => sum + profitForSale(s), 0);
   const monthProfit = salesThisMonth.reduce((sum, s) => {
     const itemsTotal = s.lines.reduce((a, l) => a + Number(l.salePrice), 0);
-    const purchaseTotal = s.lines.reduce((a, l) => a + Number(l.stockUnit.purchaseCost), 0);
+    const purchaseTotal = s.lines.reduce(
+      (a, l) => a + Number(l.stockUnit.purchaseCost),
+      0,
+    );
     const revenue = itemsTotal + Number(s.shippingCharged);
-    const costs = purchaseTotal + Number(s.platformFees) + Number(s.shippingCost) + Number(s.otherCosts);
+    const costs =
+      purchaseTotal +
+      Number(s.platformFees) +
+      Number(s.shippingCost) +
+      Number(s.otherCosts);
     return sum + (revenue - costs);
   }, 0);
 
@@ -188,7 +202,9 @@ export default async function ReportsPage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Inventory Value (Cost)</div>
-          <div style={{ fontSize: 24, fontWeight: 800 }}>£{inventoryValue.toFixed(2)}</div>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>
+            £{inventoryValue.toFixed(2)}
+          </div>
         </div>
 
         <div className="tableWrap" style={{ padding: 16 }}>

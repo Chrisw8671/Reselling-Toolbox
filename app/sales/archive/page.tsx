@@ -55,7 +55,7 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
     const itemsTotal = s.lines.reduce((sum, l) => sum + Number(l.salePrice), 0);
     const purchaseTotal = s.lines.reduce(
       (sum, l) => sum + Number(l.stockUnit.purchaseCost),
-      0
+      0,
     );
 
     const shippingCharged = Number(s.shippingCharged);
@@ -93,9 +93,7 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
     <div className="container">
       <div className="toolbar">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
-            Archived Sales
-          </h1>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Archived Sales</h1>
           <div className="muted" style={{ marginTop: 4 }}>
             {rows.length} sale(s) • Profit shown: £{totalProfit.toFixed(2)}
             {q ? ` • Filtered by “${q}”` : ""}
@@ -134,11 +132,7 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
 
           <label style={{ width: 220 }}>
             Platform
-            <select
-              name="platform"
-              defaultValue={platform}
-              style={{ width: "100%" }}
-            >
+            <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
               <option value="">All</option>
               {platforms.map((p) => (
                 <option key={p.platform} value={p.platform}>
@@ -163,8 +157,8 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
       <ArchivedSalesTable rows={rows} />
 
       <div className="muted" style={{ marginTop: 12 }}>
-        Profit: (item prices + shipping charged) − (purchase costs + fees +
-        shipping cost + other costs).
+        Profit: (item prices + shipping charged) − (purchase costs + fees + shipping cost
+        + other costs).
       </div>
     </div>
   );

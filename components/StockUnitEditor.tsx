@@ -86,15 +86,23 @@ export default function StockUnitEditor({ item }: { item: Item }) {
       </div>
 
       <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="formGrid">
+        <div className="formGrid">
           <label>
             Title
-            <input value={titleOverride} onChange={(e) => setTitleOverride(e.target.value)} style={{ width: "100%" }} />
+            <input
+              value={titleOverride}
+              onChange={(e) => setTitleOverride(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Status
-            <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: "100%" }}>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{ width: "100%" }}
+            >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {formatStatus(s)}
@@ -115,25 +123,48 @@ export default function StockUnitEditor({ item }: { item: Item }) {
 
           <label>
             Purchased date
-            <input type="date" value={purchasedAt} onChange={(e) => setPurchasedAt(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="date"
+              value={purchasedAt}
+              onChange={(e) => setPurchasedAt(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Purchase cost
-            <input type="number" step="0.01" value={purchaseCost} onChange={(e) => setPurchaseCost(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="number"
+              step="0.01"
+              value={purchaseCost}
+              onChange={(e) => setPurchaseCost(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Extra cost
-            <input type="number" step="0.01" value={extraCost} onChange={(e) => setExtraCost(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="number"
+              step="0.01"
+              value={extraCost}
+              onChange={(e) => setExtraCost(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Condition
-            <input value={condition} onChange={(e) => setCondition(e.target.value)} style={{ width: "100%" }} />
+            <input
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 26 }}>
+          <label
+            style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 26 }}
+          >
             <input
               type="checkbox"
               checked={archived}
@@ -144,11 +175,17 @@ export default function StockUnitEditor({ item }: { item: Item }) {
 
           <label style={{ gridColumn: "1 / -1" }}>
             Notes
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} style={{ width: "100%", minHeight: 110 }} />
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              style={{ width: "100%", minHeight: 110 }}
+            />
           </label>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}>
+        <div
+          style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}
+        >
           <button className="btn" type="button" onClick={save}>
             Save
           </button>

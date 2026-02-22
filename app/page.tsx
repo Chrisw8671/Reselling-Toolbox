@@ -6,7 +6,7 @@ function startOfWeek(d: Date) {
   // Monday as start of week
   const date = new Date(d);
   const day = date.getDay(); // 0=Sun,1=Mon...
-  const diff = (day === 0 ? -6 : 1 - day);
+  const diff = day === 0 ? -6 : 1 - day;
   date.setDate(date.getDate() + diff);
   date.setHours(0, 0, 0, 0);
   return date;
@@ -63,7 +63,7 @@ export default async function HomePage() {
     const itemsTotal = s.lines.reduce((a, l) => a + Number(l.salePrice), 0);
     const purchaseTotal = s.lines.reduce(
       (a, l) => a + Number(l.stockUnit.purchaseCost),
-      0
+      0,
     );
 
     const revenue = itemsTotal + Number(s.shippingCharged);
@@ -136,9 +136,7 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Profit this month</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {money(profitThisMonth)}
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{money(profitThisMonth)}</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Excludes archived sales
           </div>
@@ -146,9 +144,7 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Sell-through (active)</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {sellThrough.toFixed(1)}%
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{sellThrough.toFixed(1)}%</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Sold / (In Stock + Listed + Sold)
           </div>
@@ -243,8 +239,8 @@ export default async function HomePage() {
         </div>
 
         <div className="muted" style={{ marginTop: 12 }}>
-          Tip: This dashboard is a great place to surface “dead stock”, “items
-          not listed after X days”, and “platform profit split”.
+          Tip: This dashboard is a great place to surface “dead stock”, “items not listed
+          after X days”, and “platform profit split”.
         </div>
       </div>
     </div>

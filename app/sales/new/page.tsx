@@ -164,34 +164,74 @@ export default function CreateSalePage() {
 
           <label>
             Sale date
-            <input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="date"
+              value={saleDate}
+              onChange={(e) => setSaleDate(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Order ref (optional)
-            <input value={orderRef} onChange={(e) => setOrderRef(e.target.value)} style={{ width: "100%" }} />
+            <input
+              value={orderRef}
+              onChange={(e) => setOrderRef(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
         </div>
 
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr 1fr 1fr", marginTop: 12 }}>
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+            gridTemplateColumns: "1fr 1fr 1fr 1fr",
+            marginTop: 12,
+          }}
+        >
           <label>
             Shipping charged
-            <input type="number" step="0.01" value={shippingCharged} onChange={(e) => setShippingCharged(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="number"
+              step="0.01"
+              value={shippingCharged}
+              onChange={(e) => setShippingCharged(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Platform fees
-            <input type="number" step="0.01" value={platformFees} onChange={(e) => setPlatformFees(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="number"
+              step="0.01"
+              value={platformFees}
+              onChange={(e) => setPlatformFees(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Shipping cost (you paid)
-            <input type="number" step="0.01" value={shippingCost} onChange={(e) => setShippingCost(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="number"
+              step="0.01"
+              value={shippingCost}
+              onChange={(e) => setShippingCost(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
 
           <label>
             Other costs
-            <input type="number" step="0.01" value={otherCosts} onChange={(e) => setOtherCosts(e.target.value)} style={{ width: "100%" }} />
+            <input
+              type="number"
+              step="0.01"
+              value={otherCosts}
+              onChange={(e) => setOtherCosts(e.target.value)}
+              style={{ width: "100%" }}
+            />
           </label>
         </div>
       </div>
@@ -227,12 +267,22 @@ export default function CreateSalePage() {
           <table className="table">
             <thead className="thead">
               <tr>
-                <th className="th" style={{ width: 160 }}>Item SKU</th>
+                <th className="th" style={{ width: 160 }}>
+                  Item SKU
+                </th>
                 <th className="th">Title</th>
-                <th className="th" style={{ width: 90 }}>Loc</th>
-                <th className="th" style={{ width: 130 }}>Buy cost</th>
-                <th className="th" style={{ width: 150 }}>Sale price</th>
-                <th className="th" style={{ width: 90, textAlign: "right" }}>Remove</th>
+                <th className="th" style={{ width: 90 }}>
+                  Loc
+                </th>
+                <th className="th" style={{ width: 130 }}>
+                  Buy cost
+                </th>
+                <th className="th" style={{ width: 150 }}>
+                  Sale price
+                </th>
+                <th className="th" style={{ width: 90, textAlign: "right" }}>
+                  Remove
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -250,14 +300,21 @@ export default function CreateSalePage() {
                       onChange={(e) => {
                         const v = e.target.value;
                         setItems((prev) =>
-                          prev.map((x) => (x.stockUnitId === it.stockUnitId ? { ...x, salePrice: v } : x))
+                          prev.map((x) =>
+                            x.stockUnitId === it.stockUnitId ? { ...x, salePrice: v } : x,
+                          ),
                         );
                       }}
                       style={{ width: "100%" }}
                     />
                   </td>
                   <td className="td" style={{ textAlign: "right" }}>
-                    <button className="iconBtn" type="button" onClick={() => removeItem(it.stockUnitId)} title="Remove">
+                    <button
+                      className="iconBtn"
+                      type="button"
+                      onClick={() => removeItem(it.stockUnitId)}
+                      title="Remove"
+                    >
                       ✕
                     </button>
                   </td>
@@ -275,7 +332,9 @@ export default function CreateSalePage() {
           </table>
         </div>
 
-        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 14 }}>
+        <div
+          style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 14 }}
+        >
           <button className="btn" type="button" onClick={saveSale}>
             Save Sale
           </button>

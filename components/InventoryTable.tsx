@@ -26,8 +26,11 @@ export default function InventoryTable({ items }: { items: Item[] }) {
   const [busy, setBusy] = useState(false);
 
   const selectedSkus = useMemo(
-    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
-    [selected]
+    () =>
+      Object.entries(selected)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
+    [selected],
   );
 
   const allChecked = items.length > 0 && selectedSkus.length === items.length;
@@ -105,11 +108,7 @@ export default function InventoryTable({ items }: { items: Item[] }) {
           <thead className="thead">
             <tr>
               <th className="th" style={{ width: 44 }}>
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  onChange={toggleAll}
-                />
+                <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
 
               <th className="th" style={{ width: 170 }}>
@@ -154,9 +153,7 @@ export default function InventoryTable({ items }: { items: Item[] }) {
               <tr
                 className="tr rowClick"
                 key={it.sku}
-                onClick={() =>
-                  router.push(`/inventory/${encodeURIComponent(it.sku)}`)
-                }
+                onClick={() => router.push(`/inventory/${encodeURIComponent(it.sku)}`)}
               >
                 <td className="td" onClick={(e) => e.stopPropagation()}>
                   <input
@@ -187,9 +184,7 @@ export default function InventoryTable({ items }: { items: Item[] }) {
                 </td>
 
                 <td className="td">
-                  <span className={`badge ${it.status}`}>
-                    {formatStatus(it.status)}
-                  </span>
+                  <span className={`badge ${it.status}`}>{formatStatus(it.status)}</span>
                 </td>
 
                 <td className="td">

@@ -134,7 +134,11 @@ export default function Navbar() {
       {/* Desktop nav */}
       <nav className="navLinks navDesktop">
         {links.map((l) => (
-          <Link key={l.href} href={l.href} className={isActive(l.href) ? "navActive" : ""}>
+          <Link
+            key={l.href}
+            href={l.href}
+            className={isActive(l.href) ? "navActive" : ""}
+          >
             {l.label}
           </Link>
         ))}
@@ -191,14 +195,18 @@ export default function Navbar() {
 
               <Link
                 href="/settings"
-                className={pathname.startsWith("/settings") ? "mobileLink active" : "mobileLink"}
+                className={
+                  pathname.startsWith("/settings") ? "mobileLink active" : "mobileLink"
+                }
               >
                 Settings
               </Link>
 
               <Link
                 href="/account"
-                className={pathname.startsWith("/account") ? "mobileLink active" : "mobileLink"}
+                className={
+                  pathname.startsWith("/account") ? "mobileLink active" : "mobileLink"
+                }
               >
                 Account
               </Link>

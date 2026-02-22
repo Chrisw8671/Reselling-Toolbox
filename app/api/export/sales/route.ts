@@ -88,7 +88,9 @@ export async function GET() {
           otherCosts: Number(s.otherCosts ?? 0),
           notes: s.notes ?? "",
           archived: s.archived ? "Yes" : "No",
-          archivedAt: s.archivedAt ? s.archivedAt.toISOString().slice(0, 19).replace("T", " ") : "",
+          archivedAt: s.archivedAt
+            ? s.archivedAt.toISOString().slice(0, 19).replace("T", " ")
+            : "",
         });
         continue;
       }
@@ -114,7 +116,9 @@ export async function GET() {
           otherCosts: Number(s.otherCosts ?? 0),
           notes: s.notes ?? "",
           archived: s.archived ? "Yes" : "No",
-          archivedAt: s.archivedAt ? s.archivedAt.toISOString().slice(0, 19).replace("T", " ") : "",
+          archivedAt: s.archivedAt
+            ? s.archivedAt.toISOString().slice(0, 19).replace("T", " ")
+            : "",
         });
       }
     }
@@ -132,9 +136,6 @@ export async function GET() {
       },
     });
   } catch (e: any) {
-    return NextResponse.json(
-      { error: e?.message ?? "Export failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: e?.message ?? "Export failed" }, { status: 500 });
   }
 }

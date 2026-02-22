@@ -25,8 +25,11 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
   const [busy, setBusy] = useState(false);
 
   const selectedIds = useMemo(
-    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
-    [selected]
+    () =>
+      Object.entries(selected)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
+    [selected],
   );
 
   const allChecked = rows.length > 0 && selectedIds.length === rows.length;
@@ -93,7 +96,9 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
   return (
     <div className="tableWrap">
       {/* Bulk actions row (matches InventoryTable) */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}>
+      <div
+        style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}
+      >
         <div className="muted" style={{ fontSize: 13 }}>
           {rows.length} sale(s) • Selected: {selectedIds.length}
         </div>
@@ -119,14 +124,28 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
                 <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
 
-              <th className="th" style={{ width: 130 }}>Date</th>
-              <th className="th" style={{ width: 160 }}>Platform</th>
-              <th className="th" style={{ width: 90 }}>Items</th>
-              <th className="th" style={{ width: 120 }}>Revenue</th>
-              <th className="th" style={{ width: 120 }}>Costs</th>
-              <th className="th" style={{ width: 130 }}>Profit</th>
+              <th className="th" style={{ width: 130 }}>
+                Date
+              </th>
+              <th className="th" style={{ width: 160 }}>
+                Platform
+              </th>
+              <th className="th" style={{ width: 90 }}>
+                Items
+              </th>
+              <th className="th" style={{ width: 120 }}>
+                Revenue
+              </th>
+              <th className="th" style={{ width: 120 }}>
+                Costs
+              </th>
+              <th className="th" style={{ width: 130 }}>
+                Profit
+              </th>
               <th className="th">Order Ref</th>
-              <th className="th" style={{ width: 120, textAlign: "right" }}>Actions</th>
+              <th className="th" style={{ width: 120, textAlign: "right" }}>
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -159,7 +178,11 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
 
                 <td className="td">{r.orderRef || <span className="muted">—</span>}</td>
 
-                <td className="td" style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                <td
+                  className="td"
+                  style={{ textAlign: "right" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="actions">
                     <button
                       className="iconBtn"

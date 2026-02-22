@@ -40,9 +40,6 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ ok: true, deleted: result.deleted });
   } catch (e: any) {
-    return NextResponse.json(
-      { error: e?.message ?? "Delete failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: e?.message ?? "Delete failed" }, { status: 500 });
   }
 }

@@ -52,7 +52,7 @@ export async function DELETE(req: Request) {
   } catch (e: any) {
     return NextResponse.json(
       { ok: false, error: e?.message ?? "Delete failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -36,10 +36,15 @@ export default function ReportsCharts({
     <div className="chartsGrid">
       {/* Monthly profit line */}
       <div className="tableWrap" style={{ padding: 16 }}>
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Monthly Profit (last 12 months)</div>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>
+          Monthly Profit (last 12 months)
+        </div>
         <div className="chartBox">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyProfit}margin={{ top: 10, right: 20, left: -30, bottom: 0 }}>
+            <LineChart
+              data={monthlyProfit}
+              margin={{ top: 10, right: 20, left: -30, bottom: 0 }}
+            >
               <CartesianGrid strokeOpacity={0.15} />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
@@ -55,7 +60,10 @@ export default function ReportsCharts({
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Profit by Platform</div>
         <div className="chartBox">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={profitByPlatform} margin={{ top: 10, right: 20, left: -30, bottom: 0 }}>
+            <BarChart
+              data={profitByPlatform}
+              margin={{ top: 10, right: 20, left: -30, bottom: 0 }}
+            >
               <CartesianGrid strokeOpacity={0.15} />
               <XAxis dataKey="platform" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
@@ -72,7 +80,14 @@ export default function ReportsCharts({
         <div className="chartBox">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-              <Pie data={inventoryStatus} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={3}>
+              <Pie
+                data={inventoryStatus}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={55}
+                outerRadius={90}
+                paddingAngle={3}
+              >
                 {inventoryStatus.map((_, idx) => (
                   <Cell key={idx} fill={pieColors[idx % pieColors.length]} />
                 ))}
@@ -89,7 +104,10 @@ export default function ReportsCharts({
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Unsold Stock Age (days)</div>
         <div className="chartBox">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={agingBuckets} margin={{ top: 10, right: 20, left: -30, bottom: 0 }}>
+            <BarChart
+              data={agingBuckets}
+              margin={{ top: 10, right: 20, left: -30, bottom: 0 }}
+            >
               <CartesianGrid strokeOpacity={0.15} />
               <XAxis dataKey="bucket" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />

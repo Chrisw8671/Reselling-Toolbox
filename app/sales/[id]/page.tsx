@@ -103,9 +103,7 @@ export default async function SaleDetailPage({ params }: Props) {
           </div>
           <div>
             <b>Profit:</b>{" "}
-            <span
-              className={`badge ${profit >= 0 ? "profitPos" : "profitNeg"}`}
-            >
+            <span className={`badge ${profit >= 0 ? "profitPos" : "profitNeg"}`}>
               £{profit.toFixed(2)}
             </span>
           </div>
@@ -171,9 +169,7 @@ export default async function SaleDetailPage({ params }: Props) {
                 <td className="td">£{l.sell.toFixed(2)}</td>
                 <td className="td">
                   <span
-                    className={`badge ${
-                      l.itemProfit >= 0 ? "profitPos" : "profitNeg"
-                    }`}
+                    className={`badge ${l.itemProfit >= 0 ? "profitPos" : "profitNeg"}`}
                   >
                     £{l.itemProfit.toFixed(2)}
                   </span>

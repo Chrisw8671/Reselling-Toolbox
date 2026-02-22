@@ -21,8 +21,10 @@ export async function GET(req: Request) {
   });
 
   if (!item) return NextResponse.json({ error: "SKU not found" }, { status: 404 });
-  if (item.status === "SOLD") return NextResponse.json({ error: "Item already SOLD" }, { status: 409 });
-  if (item.archived) return NextResponse.json({ error: "Item is archived" }, { status: 409 });
+  if (item.status === "SOLD")
+    return NextResponse.json({ error: "Item already SOLD" }, { status: 409 });
+  if (item.archived)
+    return NextResponse.json({ error: "Item is archived" }, { status: 409 });
 
   return NextResponse.json({ item });
 }

@@ -42,7 +42,6 @@ export async function POST(req: Request) {
       purchasedAt: source.purchasedAt,
       notes: source.notes,
       locationId: source.locationId,
-      
     },
     select: { sku: true },
   });
