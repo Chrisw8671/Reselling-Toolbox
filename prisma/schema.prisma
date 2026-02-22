@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StockStatus {
+  IN_STOCK
+  LISTED
+  SOLD
+  RETURNED
+  WRITTEN_OFF
+}
+
+model Location {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  type      String   @default("Box")
+  notes     String?
+  createdAt DateTime @default(now())
+
+  stockUnits StockUnit[]
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  title     String
+  category  String?
+  brand     String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  stockUnits StockUnit[]
+}
+
+model Purchase {
+  id             String   @id @default(uuid())
+  purchaseDate   DateTime @default(now())
+  vendor         String?
+  totalExtraCost Decimal  @default(0)
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  stockUnits StockUnit[]
+}
+
+model StockUnit {
+  id           String     @id @default(uuid())
+  sku          String     @unique
+  titleOverride String?
+  condition    String?
+  purchaseCost Decimal    @default(0)
+  extraCost    Decimal    @default(0)
+  status       StockStatus @default(IN_STOCK)
+  purchasedAt  DateTime   @default(now())
+  notes        String?
+  createdAt    DateTime   @default(now())
+
+  productId    String?
+  product      Product?   @relation(fields: [productId], references: [id])
+
+  purchaseId   String?
+  purchase     Purchase?  @relation(fields: [purchaseId], references: [id])
+
+  locationId   String? 
+  location     Location?  @relation(fields: [locationId], references: [id])
+
+  saleLine     SaleLine?
+  
+  archived   Boolean   @default(false)
+  archivedAt DateTime?
+
+}
+
+model Sale {
+  id              String   @id @default(uuid())
+  platform        String
+  saleDate        DateTime @default(now())
+  orderRef        String?
+  shippingCharged Decimal  @default(0)
+  platformFees    Decimal  @default(0)
+  shippingCost    Decimal  @default(0)
+  otherCosts      Decimal  @default(0)
+  notes           String?
+  createdAt       DateTime @default(now())
+  archived        Boolean   @default(false)
+  archivedAt      DateTime?
+
+  lines SaleLine[]
+}
+
+model SaleLine {
+  id          String   @id @default(uuid())
+  saleId      String
+  stockUnitId String   @unique
+  salePrice   Decimal  @default(0)
+  createdAt   DateTime @default(now())
+
+  sale      Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Restrict)
+}

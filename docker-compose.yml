@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: reseller_db
+    environment:
+      POSTGRES_USER: reseller
+      POSTGRES_PASSWORD: resellerpass
+      POSTGRES_DB: reseller_inventory
+    ports:
+      - "5432:5432"
+    volumes:
+      - reseller_pgdata:/var/lib/postgresql/data
+
+volumes:
+  reseller_pgdata:
