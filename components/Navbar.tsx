@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const links = [
   { href: "/inventory", label: "Inventory" },
@@ -46,60 +47,165 @@ function SettingsCogIcon({ size = 22 }: { size?: number }) {
   );
 }
 
+function HamburgerIcon({ open, size = 22 }: { open: boolean; size?: number }) {
+  // simple animated-ish swap between hamburger and X
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {open ? (
+        <>
+          <path
+            d="M6 6L18 18"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M18 6L6 18"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </>
+      ) : (
+        <>
+          <path
+            d="M4 7H20"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M4 12H20"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M4 17H20"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export default function Navbar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // close menu when route changes
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // close on Escape
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  function isActive(href: string) {
+    return href === "/"
+      ? pathname === "/"
+      : pathname === href || pathname.startsWith(href + "/");
+  }
 
   return (
     <header className="navbar">
       <div className="navLeft">
-        <Image
-          src="/logo.png"
-          alt="Logo"
-          width={40}
-          height={40}
-          className="logo"
-        />
+        <Link href="/" className="logoLink" aria-label="Go to dashboard">
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={40}
+            height={40}
+            className="logo"
+            priority
+          />
+        </Link>
       </div>
 
-      <nav className="navLinks">
-        {links.map((l) => {
-          const active =
-            l.href === "/"
-              ? pathname === "/"
-              : pathname === l.href || pathname.startsWith(l.href + "/");
-
-          return (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={active ? "navActive" : ""}
-            >
-              {l.label}
-            </Link>
-          );
-        })}
+      {/* Desktop nav */}
+      <nav className="navLinks navDesktop">
+        {links.map((l) => (
+          <Link key={l.href} href={l.href} className={isActive(l.href) ? "navActive" : ""}>
+            {l.label}
+          </Link>
+        ))}
       </nav>
 
       {/* Right side icons */}
       <div className="navRight">
         <Link
           href="/account"
-          className={
-            pathname.startsWith("/account") ? "navIcon navActive" : "navIcon"
-          }
+          className={pathname.startsWith("/account") ? "navIcon navActive" : "navIcon"}
+          aria-label="Account"
         >
           <AccountIcon />
         </Link>
 
         <Link
           href="/settings"
-          className={
-            pathname.startsWith("/settings") ? "navIcon navActive" : "navIcon"
-          }
+          className={pathname.startsWith("/settings") ? "navIcon navActive" : "navIcon"}
+          aria-label="Settings"
         >
           <SettingsCogIcon />
         </Link>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          className="navIcon navHamburger"
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <HamburgerIcon open={open} />
+        </button>
       </div>
+
+      {/* Mobile dropdown */}
+      {open && (
+        <div className="mobileMenuOverlay" onClick={() => setOpen(false)}>
+          <div className="mobileMenu" onClick={(e) => e.stopPropagation()}>
+            <div className="mobileMenuTitle">Menu</div>
+
+            <div className="mobileMenuLinks">
+              {links.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={isActive(l.href) ? "mobileLink active" : "mobileLink"}
+                >
+                  {l.label}
+                </Link>
+              ))}
+
+              <div className="mobileDivider" />
+
+              <Link
+                href="/settings"
+                className={pathname.startsWith("/settings") ? "mobileLink active" : "mobileLink"}
+              >
+                Settings
+              </Link>
+
+              <Link
+                href="/account"
+                className={pathname.startsWith("/account") ? "mobileLink active" : "mobileLink"}
+              >
+                Account
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

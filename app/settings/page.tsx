@@ -1,63 +1,158 @@
 import Link from "next/link";
 
-function SettingsPanel({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-2xl border bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-function SettingsRow({
+function SettingsCard({
   href,
   title,
+  description,
+  icon,
+  external,
 }: {
   href: string;
   title: string;
+  description: string;
+  icon: string;
+  external?: boolean;
 }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-start justify-between gap-4 rounded-xl border p-4 hover:bg-gray-50 transition"
-    >
-      <div>
-        <div className="font-medium">{title}</div>
+  // external=true lets us use <a> for file downloads
+  const inner = (
+    <>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "var(--panel2)",
+            border: "1px solid var(--border)",
+            fontSize: 18,
+            flex: "0 0 auto",
+          }}
+        >
+          {icon}
+        </div>
+
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 15 }}>{title}</div>
+          <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
+            {description}
+          </div>
+        </div>
       </div>
+
+      <div className="muted" style={{ fontSize: 18, flex: "0 0 auto" }}>
+        →
+      </div>
+    </>
+  );
+
+  const commonProps = {
+    className: "tableWrap",
+    style: {
+      padding: 16,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 14,
+      textDecoration: "none",
+    } as React.CSSProperties,
+  };
+
+  if (external) {
+    return (
+      <a href={href} {...commonProps}>
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} {...commonProps}>
+      {inner}
     </Link>
   );
 }
 
 export default function SettingsPage() {
   return (
-    <main className="mx-auto max-w-4xl p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="mt-1 text-gray-600">
-          Manage your account preferences and archived data.
-        </p>
+    <div className="container">
+      <div className="toolbar">
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>Settings</h1>
+          <div className="muted" style={{ marginTop: 6 }}>
+            Manage reference data, exports, and archived records.
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4">
-        <SettingsPanel title="Archive">
-          <div className="grid gap-3">
-            <SettingsRow
-              href="/inventory/archive"
-              title="Archived Items"
-            />
-            <SettingsRow
-              href="/sales/archive"
-              title="Archived Sales"
-            />
-          </div>
-        </SettingsPanel>
+      {/* Export */}
+      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Export</div>
+        <div className="muted" style={{ marginBottom: 12 }}>
+          Download your database data as Excel spreadsheets.
+        </div>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          <SettingsCard
+            href="/api/export/inventory"
+            title="Export Inventory (Excel)"
+            description="Downloads an .xlsx of all stock units (including archived)."
+            icon="📦"
+            external
+          />
+
+          <SettingsCard
+            href="/api/export/sales"
+            title="Export Sales (Excel)"
+            description="Downloads an .xlsx of all sales + lines (including archived)."
+            icon="🧾"
+            external
+          />
+        </div>
       </div>
-    </main>
+
+      {/* Reference Data */}
+      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Reference Data</div>
+        <div className="muted" style={{ marginBottom: 12 }}>
+          Manage reusable lists used across the app.
+        </div>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          <SettingsCard
+            href="/locations"
+            title="Locations (Bay / Box codes)"
+            description="Add, edit or remove storage locations."
+            icon="📍"
+          />
+        </div>
+      </div>
+
+      {/* Archive */}
+      <div className="tableWrap" style={{ padding: 16 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Archive</div>
+        <div className="muted" style={{ marginBottom: 12 }}>
+          View and manage archived records.
+        </div>
+
+        <div style={{ display: "grid", gap: 12 }}>
+          <SettingsCard
+            href="/inventory/archive"
+            title="Archived Items"
+            description="See inventory items you’ve archived."
+            icon="🗃️"
+          />
+
+          <SettingsCard
+            href="/sales/archive"
+            title="Archived Sales"
+            description="See sales you’ve archived."
+            icon="🧾"
+          />
+        </div>
+      </div>
+    </div>
   );
 }

@@ -22,19 +22,13 @@ function formatCondition(value: string) {
     .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
+type LocationOption = { code: string; label: string };
+
 type Item = {
   sku: string;
   titleOverride: string;
   status: string;
   condition: string;
-
-  // These may exist on your UI, but your current update API doesn't update them.
-  // We'll display/edit them only if you later extend the API route.
-  brand?: string;
-  size?: string;
-  purchasedFrom?: string;
-  purchaseRef?: string;
-  purchaseUrl?: string;
 
   purchaseCost: number;
   extraCost: number;
@@ -60,8 +54,49 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
   const [purchaseCost, setPurchaseCost] = useState(String(item.purchaseCost ?? 0));
   const [extraCost, setExtraCost] = useState(String(item.extraCost ?? 0));
   const [purchasedAt, setPurchasedAt] = useState(item.purchasedAt);
-  const [locationCode, setLocationCode] = useState(item.locationCode);
+
   const [archived, setArchived] = useState(Boolean(item.archived));
+
+  // ✅ Location now driven by dropdown + optional custom input
+  const [locations, setLocations] = useState<LocationOption[]>([]);
+  const [locationChoice, setLocationChoice] = useState<string>(""); // "" | "__custom__" | code
+  const [locationCustom, setLocationCustom] = useState<string>("");
+  const [locationCode, setLocationCode] = useState(item.locationCode);
+
+  // Load locations
+  useEffect(() => {
+    async function loadLocations() {
+      const res = await fetch("/api/locations/list");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data?.locations)) {
+        const opts = data.locations.map((l: any) => ({
+          code: String(l.code),
+          label: String(l.label ?? l.code),
+        }));
+        setLocations(opts);
+      }
+    }
+    loadLocations();
+  }, []);
+
+  // Initialize dropdown choice when locations + item location are known
+  useEffect(() => {
+    const current = (locationCode ?? "").trim();
+    if (!current) {
+      setLocationChoice("");
+      setLocationCustom("");
+      return;
+    }
+
+    const match = locations.find((l) => l.code === current);
+    if (match) {
+      setLocationChoice(match.code);
+      setLocationCustom("");
+    } else {
+      setLocationChoice("__custom__");
+      setLocationCustom(current);
+    }
+  }, [locations, locationCode]);
 
   // Reset form when leaving edit mode or after refresh
   useEffect(() => {
@@ -72,8 +107,8 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       setPurchaseCost(String(item.purchaseCost ?? 0));
       setExtraCost(String(item.extraCost ?? 0));
       setPurchasedAt(item.purchasedAt);
-      setLocationCode(item.locationCode);
       setArchived(Boolean(item.archived));
+      setLocationCode(item.locationCode);
       setMsg("");
     }
   }, [isEditing, item]);
@@ -86,7 +121,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       purchaseCost !== String(item.purchaseCost ?? 0) ||
       extraCost !== String(item.extraCost ?? 0) ||
       purchasedAt !== item.purchasedAt ||
-      locationCode !== item.locationCode ||
+      (locationCode ?? "") !== (item.locationCode ?? "") ||
       archived !== Boolean(item.archived)
     );
   }, [
@@ -120,7 +155,6 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
 
     if (!confirm("Save changes?")) return;
 
-    // Basic validation (adjust as you like)
     const missing: string[] = [];
     if (!titleOverride.trim()) missing.push("Title");
     if (!condition) missing.push("Condition");
@@ -149,13 +183,13 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           condition: condition || null,
           notes: notes.trim() || null,
 
-          // status is fixed on your system; we won't send it unless you want to support editing.
+          // status not editable here (but your API supports it if you want)
           // status: item.status,
 
           purchaseCost: costNum,
           extraCost: extraNum,
           purchasedAt, // YYYY-MM-DD
-          locationCode: locationCode.trim() || "",
+          locationCode: (locationCode ?? "").trim(), // "" clears location in your API
 
           archived,
         }),
@@ -250,15 +284,55 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
             </select>
           </label>
 
+          {/* ✅ Location dropdown */}
           <label>
             Location (Bay/Box code)
-            <input
-              value={locationCode}
-              onChange={(e) => setLocationCode(e.target.value)}
-              placeholder="e.g. BOX-01"
+            <select
+              value={locationChoice}
+              onChange={(e) => {
+                const v = e.target.value;
+                setLocationChoice(v);
+
+                if (v === "__custom__") {
+                  setLocationCustom("");
+                  setLocationCode("");
+                } else if (v) {
+                  setLocationCustom("");
+                  setLocationCode(v);
+                } else {
+                  setLocationCustom("");
+                  setLocationCode("");
+                }
+              }}
               disabled={!isEditing}
-            />
+            >
+              <option value="">Select location...</option>
+              {locations.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
+              <option value="__custom__">Other / type manually</option>
+            </select>
           </label>
+
+          {locationChoice === "__custom__" ? (
+            <label>
+              Location (custom)
+              <input
+                value={locationCustom}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setLocationCustom(v);
+                  setLocationCode(v);
+                }}
+                placeholder="e.g. BOX-99"
+                disabled={!isEditing}
+              />
+            </label>
+          ) : (
+            <div />
+          )}
         </div>
       </div>
 

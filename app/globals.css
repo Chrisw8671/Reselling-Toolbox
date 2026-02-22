@@ -386,3 +386,106 @@ h1, h2, h3 {
 .table {
   min-width: 980px;
 }
+
+.tableWrap:hover {
+  transform: translateY(-1px);
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+/* Make logo clickable */
+.logoLink {
+  display: flex;
+  align-items: center;
+}
+
+/* Basic icon button (you may already have navIcon, keep this if not) */
+.navIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.navIcon:hover {
+  background: var(--hover);
+}
+
+/* Desktop vs mobile toggle */
+.navDesktop {
+  display: flex;
+}
+
+.navHamburger {
+  display: none; /* hidden on desktop */
+}
+
+/* Mobile menu overlay */
+.mobileMenuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Mobile menu panel */
+.mobileMenu {
+  width: min(320px, calc(100vw - 40px));
+  height: 100%;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  padding: 14px;
+}
+
+.mobileMenuTitle {
+  font-weight: 800;
+  font-size: 16px;
+  padding: 6px 6px 10px;
+}
+
+.mobileMenuLinks {
+  display: grid;
+  gap: 8px;
+}
+
+.mobileLink {
+  display: block;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.mobileLink:hover {
+  background: var(--hover);
+}
+
+.mobileLink.active {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.mobileDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+/* Breakpoint: switch to hamburger */
+@media (max-width: 768px) {
+  .navDesktop {
+    display: none;
+  }
+  .navHamburger {
+    display: inline-flex;
+  }
+}

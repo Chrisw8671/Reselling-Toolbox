@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatStatus } from "@/lib/status";
 
 const CONDITIONS = [
@@ -58,6 +58,8 @@ const MISSING_LABEL: Record<MissingKey, string> = {
   purchasedFrom: "Purchased from",
 };
 
+type LocationOption = { code: string; label: string };
+
 export default function NewInventoryPage() {
   const router = useRouter();
   const titleRef = useRef<HTMLInputElement | null>(null);
@@ -76,7 +78,12 @@ export default function NewInventoryPage() {
     new Date().toISOString().slice(0, 10)
   );
 
+  // ✅ Location now driven by dropdown + optional custom input
+  const [locations, setLocations] = useState<LocationOption[]>([]);
+  const [locationChoice, setLocationChoice] = useState<string>(""); // "" | "__custom__" | code
+  const [locationCustom, setLocationCustom] = useState<string>("");
   const [locationCode, setLocationCode] = useState("");
+
   const [notes, setNotes] = useState("");
 
   const [purchasedFromChoice, setPurchasedFromChoice] =
@@ -89,10 +96,10 @@ export default function NewInventoryPage() {
   const [brand, setBrand] = useState("");
   const [size, setSize] = useState("");
 
-  // ✅ validation / messaging
   const [missingFields, setMissingFields] = useState<MissingKey[]>([]);
   const [msg, setMsg] = useState("");
 
+  // Fetch SKU on load
   useEffect(() => {
     async function fetchSku() {
       const res = await fetch("/api/stock/next-sku");
@@ -105,6 +112,23 @@ export default function NewInventoryPage() {
     fetchSku();
   }, []);
 
+  // Load locations for dropdown
+  useEffect(() => {
+    async function loadLocations() {
+      const res = await fetch("/api/locations/list");
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data?.locations)) {
+        setLocations(
+          data.locations.map((l: any) => ({
+            code: String(l.code),
+            label: String(l.label ?? l.code),
+          }))
+        );
+      }
+    }
+    loadLocations();
+  }, []);
+
   function computeMissing(): MissingKey[] {
     const missing: MissingKey[] = [];
 
@@ -115,7 +139,6 @@ export default function NewInventoryPage() {
     const costNum = Number(purchaseCost);
     if (!Number.isFinite(costNum) || costNum <= 0) missing.push("purchaseCost");
 
-    // purchasedFrom rules
     if (!purchasedFromChoice) {
       missing.push("purchasedFrom");
     } else if (purchasedFromChoice === "Other" && !purchasedFromOther.trim()) {
@@ -125,16 +148,14 @@ export default function NewInventoryPage() {
     return missing;
   }
 
-  // ✅ Keep missingFields always in sync with inputs
+  // Keep missingFields + message synced
   useEffect(() => {
     const m = computeMissing();
     setMissingFields(m);
 
-    // Keep the text line in sync too (but don't overwrite Saved ✓)
     if (m.length > 0) {
       setMsg("Missing: " + m.map((k) => MISSING_LABEL[k]).join(", "));
     } else {
-      // Only clear the missing message, don't remove "Saved ✓" etc.
       setMsg((prev) => (prev.startsWith("Missing:") ? "" : prev));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,17 +171,14 @@ export default function NewInventoryPage() {
     ) : null;
 
   async function save() {
-    // recompute right now for safety
     const missing = computeMissing();
 
     if (missing.length > 0) {
       setMissingFields(missing);
-
       alert(
         "Please fill in the following required field(s):\n\n" +
           missing.map((k) => `• ${MISSING_LABEL[k]}`).join("\n")
       );
-
       setMsg("Missing: " + missing.map((k) => MISSING_LABEL[k]).join(", "));
       return;
     }
@@ -217,6 +235,12 @@ export default function NewInventoryPage() {
     setBrand("");
     setSize("");
 
+    // reset location selection
+    setLocationChoice("");
+    setLocationCustom("");
+    setLocationCode("");
+
+    setMissingFields([]);
     setMsg("Saved ✓");
 
     const res2 = await fetch("/api/stock/next-sku");
@@ -225,8 +249,6 @@ export default function NewInventoryPage() {
 
     setTimeout(() => titleRef.current?.focus(), 0);
   }
-
-  const showMissingLine = msg && (missingFields.length > 0 || msg === "Saved ✓" || !msg.startsWith("Missing:"));
 
   return (
     <div className="container">
@@ -239,7 +261,6 @@ export default function NewInventoryPage() {
             SKU: {sku || "Generating..."}
           </div>
 
-          {/* ✅ message under SKU */}
           {msg && (
             <div className="muted" style={{ marginTop: 8 }}>
               {msg}
@@ -248,11 +269,7 @@ export default function NewInventoryPage() {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button
-            className="btn"
-            type="button"
-            onClick={() => router.push("/inventory")}
-          >
+          <button className="btn" type="button" onClick={() => router.push("/inventory")}>
             ← Inventory
           </button>
           <button className="btn primary" type="button" onClick={save}>
@@ -293,14 +310,53 @@ export default function NewInventoryPage() {
               </select>
             </label>
 
+            {/* ✅ Location dropdown */}
             <label>
               Location (Bay/Box code)
-              <input
-                value={locationCode}
-                onChange={(e) => setLocationCode(e.target.value)}
-                placeholder="e.g. BOX-01"
-              />
+              <select
+                value={locationChoice}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setLocationChoice(v);
+
+                  if (v === "__custom__") {
+                    setLocationCustom("");
+                    setLocationCode("");
+                  } else if (v) {
+                    setLocationCustom("");
+                    setLocationCode(v);
+                  } else {
+                    setLocationCustom("");
+                    setLocationCode("");
+                  }
+                }}
+              >
+                <option value="">Select location...</option>
+                {locations.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.label}
+                  </option>
+                ))}
+                <option value="__custom__">Other / type manually</option>
+              </select>
             </label>
+
+            {locationChoice === "__custom__" ? (
+              <label>
+                Location (custom)
+                <input
+                  value={locationCustom}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setLocationCustom(v);
+                    setLocationCode(v);
+                  }}
+                  placeholder="e.g. BOX-99"
+                />
+              </label>
+            ) : (
+              <div />
+            )}
 
             <label>
               Brand{requiredStar("brand")}

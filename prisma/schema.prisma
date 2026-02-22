@@ -9,6 +9,7 @@ datasource db {
 
 enum StockStatus {
   IN_STOCK
+  LISTED
   SOLD
   RETURNED
   WRITTEN_OFF
