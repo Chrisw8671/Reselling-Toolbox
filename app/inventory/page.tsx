@@ -2,6 +2,13 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import InventoryTable from "@/components/InventoryTable";
 import { formatStatus } from "@/lib/status";
+import {
+  calcBreakEvenPrice,
+  calcRecommendedMarkdownPrice,
+  calcTargetPrice,
+  getInventoryAgeDays,
+  PRICING_AGE_THRESHOLDS,
+} from "@/lib/pricing";
 
 type Props = {
   searchParams?: Promise<{
@@ -11,6 +18,8 @@ type Props = {
     platform?: string;
     listed_on_any?: string;
     listed_on_count_min?: string;
+    age_min?: string;
+    needs_price_review?: string;
   }>;
 };
 
@@ -22,8 +31,11 @@ export default async function InventoryPage({ searchParams }: Props) {
   const platform = (sp.platform ?? "").trim();
   const listedOnAny = (sp.listed_on_any ?? "") === "1";
   const listedOnCountMin = Number(sp.listed_on_count_min ?? "");
+  const ageMin = Number.parseInt((sp.age_min ?? "").trim(), 10);
+  const needsPriceReview = (sp.needs_price_review ?? "") === "1";
 
   const status = inStock ? "IN_STOCK" : statusParam;
+  const safeAgeMin = Number.isFinite(ageMin) && ageMin > 0 ? ageMin : null;
 
   const where: any = { archived: false };
 
@@ -40,6 +52,21 @@ export default async function InventoryPage({ searchParams }: Props) {
             platform: { equals: platform, mode: "insensitive" },
           }
         : {},
+  if (safeAgeMin) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - safeAgeMin);
+    where.purchasedAt = { lte: cutoff };
+  }
+
+  if (needsPriceReview) {
+    const reviewCutoff = new Date();
+    reviewCutoff.setDate(reviewCutoff.getDate() - PRICING_AGE_THRESHOLDS.markdown45);
+
+    where.status = "LISTED";
+    where.purchasedAt = {
+      lte: where.purchasedAt?.lte
+        ? new Date(Math.min(where.purchasedAt.lte.getTime(), reviewCutoff.getTime()))
+        : reviewCutoff,
     };
   }
 
@@ -48,13 +75,10 @@ export default async function InventoryPage({ searchParams }: Props) {
       { sku: { contains: q, mode: "insensitive" } },
       { titleOverride: { contains: q, mode: "insensitive" } },
       { condition: { contains: q, mode: "insensitive" } },
-
-      // ✅ new searchable fields
       { purchasedFrom: { contains: q, mode: "insensitive" } },
       { purchaseRef: { contains: q, mode: "insensitive" } },
       { brand: { contains: q, mode: "insensitive" } },
       { size: { contains: q, mode: "insensitive" } },
-
       { location: { is: { code: { contains: q, mode: "insensitive" } } } },
     ];
   }
@@ -69,6 +93,9 @@ export default async function InventoryPage({ searchParams }: Props) {
       status: true,
       purchaseCost: true,
       extraCost: true,
+      targetMarginPct: true,
+      recommendedPrice: true,
+      lastPricingEvalAt: true,
       condition: true,
       purchasedAt: true,
       purchasedFrom: true,
@@ -106,6 +133,57 @@ export default async function InventoryPage({ searchParams }: Props) {
     createdAt: it.createdAt.toISOString(),
     location: it.location ? { code: it.location.code } : null,
   }));
+  const itemsPlain = items.map((it) => {
+    const purchaseCost = Number(it.purchaseCost);
+    const extraCost = Number(it.extraCost ?? 0);
+    const targetMarginPct = Number(it.targetMarginPct ?? 25);
+    const ageDays = getInventoryAgeDays(it.purchasedAt);
+
+    const breakEvenPrice = calcBreakEvenPrice({
+      purchaseCost,
+      fees: extraCost,
+    });
+
+    const baseTargetPrice = calcTargetPrice({
+      purchaseCost,
+      fees: extraCost,
+      targetMarginPct,
+    });
+
+    const markdown = calcRecommendedMarkdownPrice({
+      ageDays,
+      baseTargetPrice,
+    });
+
+    const computedRecommendedPrice = Number(it.recommendedPrice ?? markdown.price);
+    const needsReviewByAge =
+      it.status === "LISTED" && ageDays >= PRICING_AGE_THRESHOLDS.markdown45;
+
+    return {
+      sku: it.sku,
+      titleOverride: it.titleOverride,
+      status: it.status,
+      purchaseCost,
+      extraCost,
+      breakEvenPrice,
+      targetMarginPct,
+      recommendedPrice: computedRecommendedPrice,
+      markdownPct: markdown.markdownPct,
+      pricingAlert: needsReviewByAge,
+      pricingLastEvaluatedAt: it.lastPricingEvalAt
+        ? it.lastPricingEvalAt.toISOString()
+        : null,
+      condition: it.condition ?? "",
+      purchasedAt: it.purchasedAt ? it.purchasedAt.toISOString() : null,
+      purchasedFrom: it.purchasedFrom ?? "",
+      purchaseRef: it.purchaseRef ?? "",
+      purchaseUrl: it.purchaseUrl ?? "",
+      brand: it.brand ?? "",
+      size: it.size ?? "",
+      createdAt: it.createdAt.toISOString(),
+      location: it.location ? { code: it.location.code } : null,
+    };
+  });
 
   const platformOptionsRaw = await prisma.listing.findMany({
     distinct: ["platform"],
@@ -124,6 +202,8 @@ export default async function InventoryPage({ searchParams }: Props) {
   if (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) {
     qsBase.set("listed_on_count_min", String(listedOnCountMin));
   }
+  if (safeAgeMin) qsBase.set("age_min", String(safeAgeMin));
+  if (needsPriceReview) qsBase.set("needs_price_review", "1");
 
   const inStockOnHref = `/inventory?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
@@ -141,12 +221,14 @@ export default async function InventoryPage({ searchParams }: Props) {
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Inventory</h1>
           <div className="muted" style={{ marginTop: 4 }}>
             {itemsPlain.length} item(s)
-            {(q || status) && (
+            {(q || status || safeAgeMin || needsPriceReview) && (
               <>
                 {" "}
                 • Filtered
                 {q ? ` by “${q}”` : ""}
                 {status ? ` • Status: ${formatStatus(status)}` : ""}
+                {safeAgeMin ? ` • Age: ${safeAgeMin}+ days` : ""}
+                {needsPriceReview ? " • Needs price review" : ""}
               </>
             )}
           </div>
@@ -163,7 +245,6 @@ export default async function InventoryPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
         <form
           action="/inventory"
@@ -175,7 +256,7 @@ export default async function InventoryPage({ searchParams }: Props) {
             alignItems: "end",
           }}
         >
-          <label style={{ flex: "1 1 320px" }}>
+          <label style={{ flex: "1 1 280px" }}>
             Search (SKU, title, location, purchase info)
             <input
               name="q"
@@ -242,6 +323,34 @@ export default async function InventoryPage({ searchParams }: Props) {
               placeholder="e.g. 2"
               style={{ width: "100%" }}
             />
+          <label style={{ width: 140 }}>
+            Min age (days)
+            <input
+              name="age_min"
+              type="number"
+              min={1}
+              defaultValue={safeAgeMin ?? ""}
+              placeholder="45"
+              style={{ width: "100%" }}
+            />
+          </label>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              paddingBottom: 8,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              name="needs_price_review"
+              value="1"
+              defaultChecked={needsPriceReview}
+            />
+            Needs price review
           </label>
 
           {inStock && <input type="hidden" name="in_stock" value="1" />}
@@ -256,6 +365,7 @@ export default async function InventoryPage({ searchParams }: Props) {
             platform ||
             listedOnAny ||
             listedOnCountMin) && (
+          {(q || statusParam || inStock || safeAgeMin || needsPriceReview) && (
             <Link className="btn" href="/inventory">
               Clear
             </Link>
@@ -263,7 +373,6 @@ export default async function InventoryPage({ searchParams }: Props) {
         </form>
       </div>
 
-      {/* Bulk-select table */}
       <InventoryTable items={itemsPlain} />
     </div>
   );

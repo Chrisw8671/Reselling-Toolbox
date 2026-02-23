@@ -74,7 +74,7 @@ model StockUnit {
   size          String?
 
   productId String?
-  product   Product?  @relation(fields: [productId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
 
   purchaseId String?
   purchase   Purchase? @relation(fields: [purchaseId], references: [id])
@@ -87,6 +87,10 @@ model StockUnit {
 
   archived   Boolean   @default(false)
   archivedAt DateTime?
+
+  targetMarginPct   Decimal?
+  recommendedPrice  Decimal?
+  lastPricingEvalAt DateTime?
 }
 
 model Listing {
@@ -109,17 +113,17 @@ model Listing {
 }
 
 model Sale {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   platform        String
-  saleDate        DateTime @default(now())
+  saleDate        DateTime  @default(now())
   orderRef        String?
-  shippingCharged Decimal  @default(0)
-  platformFees    Decimal  @default(0)
-  shippingCost    Decimal  @default(0)
-  otherCosts      Decimal  @default(0)
+  shippingCharged Decimal   @default(0)
+  platformFees    Decimal   @default(0)
+  shippingCost    Decimal   @default(0)
+  otherCosts      Decimal   @default(0)
   notes           String?
-  createdAt       DateTime @default(now())
-  archived        Boolean  @default(false)
+  createdAt       DateTime  @default(now())
+  archived        Boolean   @default(false)
   archivedAt      DateTime?
 
   lines SaleLine[]

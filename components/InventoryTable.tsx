@@ -9,16 +9,18 @@ type Item = {
   sku: string;
   titleOverride: string | null;
   status: string;
-
   purchaseCost: number;
   createdAt: string;
   location: { code: string } | null;
-
-  // ✅ new fields (optional)
   purchasedFrom?: string | null;
   purchaseRef?: string | null;
   brand?: string | null;
   size?: string | null;
+  breakEvenPrice: number;
+  targetMarginPct: number;
+  recommendedPrice: number;
+  markdownPct: number;
+  pricingAlert: boolean;
 };
 
 export default function InventoryTable({ items }: { items: Item[] }) {
@@ -74,7 +76,6 @@ export default function InventoryTable({ items }: { items: Item[] }) {
 
   return (
     <div className="tableWrap">
-      {/* Bulk actions row */}
       <div
         style={{
           display: "flex",
@@ -112,8 +113,6 @@ export default function InventoryTable({ items }: { items: Item[] }) {
                 SKU
               </th>
               <th className="th">Title</th>
-
-              {/* ✅ new columns */}
               <th className="th" style={{ width: 160 }}>
                 Purchased From
               </th>
@@ -126,7 +125,6 @@ export default function InventoryTable({ items }: { items: Item[] }) {
               <th className="th" style={{ width: 120 }}>
                 Size
               </th>
-
               <th className="th" style={{ width: 150 }}>
                 Status
               </th>
@@ -135,6 +133,12 @@ export default function InventoryTable({ items }: { items: Item[] }) {
               </th>
               <th className="th" style={{ width: 120 }}>
                 Cost
+              </th>
+              <th className="th" style={{ width: 140 }}>
+                Break-even
+              </th>
+              <th className="th" style={{ width: 170 }}>
+                Recommended
               </th>
               <th className="th" style={{ width: 170 }}>
                 Created
@@ -150,6 +154,9 @@ export default function InventoryTable({ items }: { items: Item[] }) {
               <tr
                 className="tr rowClick"
                 key={it.sku}
+                style={
+                  it.pricingAlert ? { backgroundColor: "rgba(245, 158, 11, 0.1)" } : {}
+                }
                 onClick={() => router.push(`/inventory/${encodeURIComponent(it.sku)}`)}
               >
                 <td className="td" onClick={(e) => e.stopPropagation()}>
@@ -161,12 +168,9 @@ export default function InventoryTable({ items }: { items: Item[] }) {
                 </td>
 
                 <td className="td">{it.sku}</td>
-
                 <td className="td titleCell">
                   {it.titleOverride ?? <span className="muted">—</span>}
                 </td>
-
-                {/* ✅ new fields */}
                 <td className="td">
                   {it.purchasedFrom ? it.purchasedFrom : <span className="muted">—</span>}
                 </td>
@@ -182,14 +186,24 @@ export default function InventoryTable({ items }: { items: Item[] }) {
 
                 <td className="td">
                   <span className={`badge ${it.status}`}>{formatStatus(it.status)}</span>
+                  {it.pricingAlert && (
+                    <div className="muted" style={{ marginTop: 4, fontSize: 12 }}>
+                      Markdown due ({it.markdownPct}% suggested)
+                    </div>
+                  )}
                 </td>
 
                 <td className="td">
                   {it.location?.code ?? <span className="muted">—</span>}
                 </td>
-
                 <td className="td">{moneyGBP(it.purchaseCost)}</td>
-
+                <td className="td">{moneyGBP(it.breakEvenPrice)}</td>
+                <td className="td">
+                  {moneyGBP(it.recommendedPrice)}
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Margin {it.targetMarginPct}%
+                  </div>
+                </td>
                 <td className="td">{isoDateTime(it.createdAt)}</td>
 
                 <td
@@ -260,7 +274,7 @@ export default function InventoryTable({ items }: { items: Item[] }) {
 
             {items.length === 0 && (
               <tr className="tr">
-                <td className="td muted" colSpan={12}>
+                <td className="td muted" colSpan={14}>
                   No matching items.
                 </td>
               </tr>
