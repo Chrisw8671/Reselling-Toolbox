@@ -30,7 +30,7 @@ export default async function SaleDetailPage({ params }: Props) {
       shippingCost: true,
       otherCosts: true,
       notes: true,
-      archivedAt: true, // ✅ added
+      archivedAt: true,
       returnCases: {
         select: {
           id: true,
@@ -44,7 +44,6 @@ export default async function SaleDetailPage({ params }: Props) {
         },
         orderBy: { openedAt: "desc" },
       },
-      archivedAt: true,
       fulfillmentStatus: true,
       trackingNumber: true,
       carrier: true,
@@ -127,11 +126,12 @@ export default async function SaleDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Summary */}
       <ReturnManager
         saleId={sale.id}
         lines={sale.lines}
         existingCases={sale.returnCases}
+      />
+
       <SaleFulfillmentEditor
         saleId={sale.id}
         fulfillmentStatus={sale.fulfillmentStatus as FulfillmentStatus}

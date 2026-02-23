@@ -7,7 +7,6 @@ export default async function HomePage() {
   const weekStart = startOfWeekMonday(now);
   const monthStart = startOfMonth(now);
 
-  // --- Fetch dashboard data ---
   const [
     totalStock,
     addedThisWeek,
@@ -64,7 +63,6 @@ export default async function HomePage() {
   const crossListedItems = listingCounts.filter((x) => x._count._all >= 2).length;
   const singlePlatformOnlyItems = listingCounts.filter((x) => x._count._all === 1).length;
 
-  // Profit this month
   const profitThisMonth = salesThisMonth.reduce((sum, s) => {
     const itemsTotal = s.lines.reduce((a, l) => a + Number(l.salePrice), 0);
     const purchaseTotal = s.lines.reduce(
@@ -82,16 +80,13 @@ export default async function HomePage() {
     return sum + (revenue - costs);
   }, 0);
 
-  // Simple “stock health” indicators
-  const totalActive = inStockCount + listedCount + soldCount; // sold still active if not archived
+  const totalActive = inStockCount + listedCount + soldCount;
   const sellThrough = totalActive === 0 ? 0 : (soldCount / totalActive) * 100;
 
-  // Placeholder name until auth is added
   const userName = "User";
 
   return (
     <div className="container">
-      {/* Header */}
       <div className="toolbar">
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>
@@ -115,7 +110,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* KPI Tiles (Business Central vibe) */}
       <div
         style={{
           display: "grid",
@@ -173,7 +167,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Status Tiles Row (like BC "Ongoing Sales") */}
       <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 10 }}>
           Inventory status
@@ -257,6 +250,10 @@ export default async function HomePage() {
             <div style={{ fontSize: 30, fontWeight: 900 }}>{issueCount}</div>
             <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
               Needs attention
+            </div>
+          </Link>
+
+          <Link
             href="/inventory?status=LISTED&age_min=45&needs_price_review=1"
             className="tableWrap"
             style={{ padding: 16, textDecoration: "none" }}
@@ -282,7 +279,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Quick Links / Actions */}
       <div className="tableWrap" style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 10 }}>
           Quick actions
