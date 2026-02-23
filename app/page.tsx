@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import {
-  moneyGBP,
-  startOfMonth,
-  startOfWeekMonday,
-  isoDateFromDate,
-} from "@/lib/format";
+import { moneyGBP, startOfMonth, startOfWeekMonday, isoDateFromDate } from "@/lib/format";
 
 export default async function HomePage() {
   const now = new Date();
@@ -19,6 +14,8 @@ export default async function HomePage() {
     inStockCount,
     listedCount,
     soldCount,
+    staleListedCount,
+    deadStockCount,
     salesThisMonth,
   ] = await Promise.all([
     prisma.stockUnit.count({ where: { archived: false } }),
@@ -28,6 +25,20 @@ export default async function HomePage() {
     prisma.stockUnit.count({ where: { archived: false, status: "IN_STOCK" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "LISTED" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "SOLD" } }),
+    prisma.stockUnit.count({
+      where: {
+        archived: false,
+        status: "LISTED",
+        createdAt: { lte: new Date(now.getTime() - 45 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+    prisma.stockUnit.count({
+      where: {
+        archived: false,
+        status: "IN_STOCK",
+        createdAt: { lte: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000) },
+      },
+    }),
     prisma.sale.findMany({
       where: { archived: false, saleDate: { gte: monthStart } },
       select: {
@@ -66,6 +77,43 @@ export default async function HomePage() {
   // Simple “stock health” indicators
   const totalActive = inStockCount + listedCount + soldCount; // sold still active if not archived
   const sellThrough = totalActive === 0 ? 0 : (soldCount / totalActive) * 100;
+
+  const [freshCount, aging31to60, aging61to90, aging90Plus] = await Promise.all([
+    prisma.stockUnit.count({
+      where: {
+        archived: false,
+        status: { in: ["IN_STOCK", "LISTED"] },
+        createdAt: { gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+    prisma.stockUnit.count({
+      where: {
+        archived: false,
+        status: { in: ["IN_STOCK", "LISTED"] },
+        createdAt: {
+          lt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+          gte: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+        },
+      },
+    }),
+    prisma.stockUnit.count({
+      where: {
+        archived: false,
+        status: { in: ["IN_STOCK", "LISTED"] },
+        createdAt: {
+          lt: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+          gte: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+        },
+      },
+    }),
+    prisma.stockUnit.count({
+      where: {
+        archived: false,
+        status: { in: ["IN_STOCK", "LISTED"] },
+        createdAt: { lt: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+  ]);
 
   // Placeholder name until auth is added
   const userName = "User";
@@ -123,9 +171,7 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Profit this month</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {moneyGBP(profitThisMonth)}
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{moneyGBP(profitThisMonth)}</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Excludes archived sales
           </div>
@@ -133,12 +179,91 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Sell-through (active)</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {sellThrough.toFixed(1)}%
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{sellThrough.toFixed(1)}%</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Sold / (In Stock + Listed + Sold)
           </div>
+        </div>
+      </div>
+
+      <div
+        className="tableWrap"
+        style={{
+          padding: 16,
+          marginBottom: 16,
+          display: "grid",
+          gap: 12,
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        }}
+      >
+        <Link
+          href="/inventory?status=LISTED&age_min=45"
+          className="tableWrap"
+          style={{ padding: 16, textDecoration: "none" }}
+        >
+          <div className="muted">Stale listings (45+ days)</div>
+          <div style={{ fontSize: 30, fontWeight: 900 }}>{staleListedCount}</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Common reseller app feature: relist/discount candidates
+          </div>
+        </Link>
+
+        <Link
+          href="/inventory?status=IN_STOCK&age_min=60"
+          className="tableWrap"
+          style={{ padding: 16, textDecoration: "none" }}
+        >
+          <div className="muted">Dead stock watch (60+ days)</div>
+          <div style={{ fontSize: 30, fontWeight: 900 }}>{deadStockCount}</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Items sitting unsold in storage
+          </div>
+        </Link>
+      </div>
+
+      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 10 }}>
+          Inventory aging buckets
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          }}
+        >
+          <Link
+            href="/inventory?age_max=30"
+            className="tableWrap"
+            style={{ padding: 14, textDecoration: "none" }}
+          >
+            <div className="muted">0–30 days</div>
+            <div style={{ fontSize: 24, fontWeight: 900 }}>{freshCount}</div>
+          </Link>
+          <Link
+            href="/inventory?age_min=31&age_max=60"
+            className="tableWrap"
+            style={{ padding: 14, textDecoration: "none" }}
+          >
+            <div className="muted">31–60 days</div>
+            <div style={{ fontSize: 24, fontWeight: 900 }}>{aging31to60}</div>
+          </Link>
+          <Link
+            href="/inventory?age_min=61&age_max=90"
+            className="tableWrap"
+            style={{ padding: 14, textDecoration: "none" }}
+          >
+            <div className="muted">61–90 days</div>
+            <div style={{ fontSize: 24, fontWeight: 900 }}>{aging61to90}</div>
+          </Link>
+          <Link
+            href="/inventory?age_min=90"
+            className="tableWrap"
+            style={{ padding: 14, textDecoration: "none" }}
+          >
+            <div className="muted">90+ days</div>
+            <div style={{ fontSize: 24, fontWeight: 900 }}>{aging90Plus}</div>
+          </Link>
         </div>
       </div>
 
@@ -230,8 +355,8 @@ export default async function HomePage() {
         </div>
 
         <div className="muted" style={{ marginTop: 12 }}>
-          Tip: This dashboard is a great place to surface “dead stock”, “items not
-          listed after X days”, and “platform profit split”.
+          Tip: This dashboard is a great place to surface “dead stock”, “items not listed
+          after X days”, and “platform profit split”.
         </div>
       </div>
     </div>
