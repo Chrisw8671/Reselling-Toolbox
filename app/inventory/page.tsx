@@ -8,6 +8,7 @@ type Props = {
     q?: string;
     status?: string;
     in_stock?: string;
+    age_min?: string;
   }>;
 };
 
@@ -16,12 +17,19 @@ export default async function InventoryPage({ searchParams }: Props) {
   const q = (sp.q ?? "").trim();
   const statusParam = (sp.status ?? "").trim();
   const inStock = (sp.in_stock ?? "") === "1";
+  const ageMin = Number(sp.age_min ?? "");
+  const hasAgeFilter = Number.isFinite(ageMin) && ageMin > 0;
 
   const status = inStock ? "IN_STOCK" : statusParam;
 
   const where: any = { archived: false };
 
   if (status) where.status = status;
+  if (hasAgeFilter) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - ageMin);
+    where.createdAt = { lte: cutoff };
+  }
 
   if (q) {
     where.OR = [
@@ -57,6 +65,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       brand: true,
       size: true,
       createdAt: true,
+      updatedAt: true,
       location: { select: { code: true } },
     },
   });
@@ -76,6 +85,7 @@ export default async function InventoryPage({ searchParams }: Props) {
     brand: it.brand ?? "",
     size: it.size ?? "",
     createdAt: it.createdAt.toISOString(),
+    updatedAt: it.updatedAt.toISOString(),
     location: it.location ? { code: it.location.code } : null,
   }));
 
@@ -84,6 +94,7 @@ export default async function InventoryPage({ searchParams }: Props) {
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (statusParam && !inStock) qsBase.set("status", statusParam);
+  if (hasAgeFilter) qsBase.set("age_min", String(ageMin));
 
   const inStockOnHref = `/inventory?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
@@ -107,6 +118,7 @@ export default async function InventoryPage({ searchParams }: Props) {
                 • Filtered
                 {q ? ` by “${q}”` : ""}
                 {status ? ` • Status: ${formatStatus(status)}` : ""}
+                {hasAgeFilter ? ` • Age: ${ageMin}+ days` : ""}
               </>
             )}
           </div>
@@ -146,6 +158,19 @@ export default async function InventoryPage({ searchParams }: Props) {
           </label>
 
           <label style={{ width: 220 }}>
+            Age (days min)
+            <input
+              name="age_min"
+              type="number"
+              min={1}
+              step={1}
+              defaultValue={hasAgeFilter ? String(ageMin) : ""}
+              placeholder="e.g. 90"
+              style={{ width: "100%" }}
+            />
+          </label>
+
+          <label style={{ width: 220 }}>
             Status
             <select
               name="status"
@@ -170,7 +195,7 @@ export default async function InventoryPage({ searchParams }: Props) {
             Apply
           </button>
 
-          {(q || statusParam || inStock) && (
+          {(q || statusParam || inStock || hasAgeFilter) && (
             <Link className="btn" href="/inventory">
               Clear
             </Link>
@@ -179,7 +204,10 @@ export default async function InventoryPage({ searchParams }: Props) {
       </div>
 
       {/* Bulk-select table */}
-      <InventoryTable items={itemsPlain} />
+      <InventoryTable
+        items={itemsPlain}
+        quickAction={hasAgeFilter && ageMin >= 90 ? "MARKDOWN_15" : null}
+      />
     </div>
   );
 }
