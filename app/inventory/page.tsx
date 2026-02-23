@@ -8,6 +8,8 @@ type Props = {
     q?: string;
     status?: string;
     in_stock?: string;
+    age_min?: string;
+    age_max?: string;
   }>;
 };
 
@@ -16,12 +18,30 @@ export default async function InventoryPage({ searchParams }: Props) {
   const q = (sp.q ?? "").trim();
   const statusParam = (sp.status ?? "").trim();
   const inStock = (sp.in_stock ?? "") === "1";
+  const ageMinDays = Number.parseInt((sp.age_min ?? "").trim(), 10);
+  const ageMaxDays = Number.parseInt((sp.age_max ?? "").trim(), 10);
 
   const status = inStock ? "IN_STOCK" : statusParam;
 
   const where: any = { archived: false };
 
   if (status) where.status = status;
+
+  const now = Date.now();
+  const hasAgeMin = Number.isFinite(ageMinDays) && ageMinDays >= 0;
+  const hasAgeMax = Number.isFinite(ageMaxDays) && ageMaxDays >= 0;
+
+  if (hasAgeMin || hasAgeMax) {
+    where.createdAt = {};
+
+    if (hasAgeMin) {
+      where.createdAt.lte = new Date(now - ageMinDays * 24 * 60 * 60 * 1000);
+    }
+
+    if (hasAgeMax) {
+      where.createdAt.gte = new Date(now - ageMaxDays * 24 * 60 * 60 * 1000);
+    }
+  }
 
   if (q) {
     where.OR = [
@@ -84,6 +104,8 @@ export default async function InventoryPage({ searchParams }: Props) {
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (statusParam && !inStock) qsBase.set("status", statusParam);
+  if (hasAgeMin) qsBase.set("age_min", String(ageMinDays));
+  if (hasAgeMax) qsBase.set("age_max", String(ageMaxDays));
 
   const inStockOnHref = `/inventory?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
@@ -107,6 +129,15 @@ export default async function InventoryPage({ searchParams }: Props) {
                 • Filtered
                 {q ? ` by “${q}”` : ""}
                 {status ? ` • Status: ${formatStatus(status)}` : ""}
+              </>
+            )}
+            {(hasAgeMin || hasAgeMax) && (
+              <>
+                {" "}
+                • Age
+                {hasAgeMin ? ` ≥ ${ageMinDays}d` : ""}
+                {hasAgeMin && hasAgeMax ? " and" : ""}
+                {hasAgeMax ? ` ≤ ${ageMaxDays}d` : ""}
               </>
             )}
           </div>
@@ -164,13 +195,39 @@ export default async function InventoryPage({ searchParams }: Props) {
             </select>
           </label>
 
+          <label style={{ width: 160 }}>
+            Min age (days)
+            <input
+              name="age_min"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={Number.isFinite(ageMinDays) ? ageMinDays : ""}
+              placeholder="e.g. 30"
+              style={{ width: "100%" }}
+            />
+          </label>
+
+          <label style={{ width: 160 }}>
+            Max age (days)
+            <input
+              name="age_max"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={Number.isFinite(ageMaxDays) ? ageMaxDays : ""}
+              placeholder="e.g. 90"
+              style={{ width: "100%" }}
+            />
+          </label>
+
           {inStock && <input type="hidden" name="in_stock" value="1" />}
 
           <button className="btn" type="submit">
             Apply
           </button>
 
-          {(q || statusParam || inStock) && (
+          {(q || statusParam || inStock || hasAgeMin || hasAgeMax) && (
             <Link className="btn" href="/inventory">
               Clear
             </Link>
