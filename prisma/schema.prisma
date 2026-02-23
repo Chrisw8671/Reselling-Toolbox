@@ -15,6 +15,19 @@ enum StockStatus {
   WRITTEN_OFF
 }
 
+enum FulfillmentStatus {
+  PENDING
+  PACKED
+  SHIPPED
+  DELIVERED
+  ISSUE
+enum ListingStatus {
+  ACTIVE
+  PAUSED
+  SOLD
+  ENDED
+}
+
 model Location {
   id        String   @id @default(uuid())
   code      String   @unique
@@ -34,6 +47,20 @@ model Product {
   createdAt DateTime @default(now())
 
   stockUnits StockUnit[]
+  watch      ProductWatch?
+}
+
+model ProductWatch {
+  id             String   @id @default(uuid())
+  productId      String   @unique
+  active         Boolean  @default(true)
+  targetBuyPrice Decimal?
+  notes          String?
+  priority       Int      @default(3)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Purchase {
@@ -68,7 +95,7 @@ model StockUnit {
   size          String?
 
   productId String?
-  product   Product?  @relation(fields: [productId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
 
   purchaseId String?
   purchase   Purchase? @relation(fields: [purchaseId], references: [id])
@@ -77,6 +104,8 @@ model StockUnit {
   location   Location? @relation(fields: [locationId], references: [id])
 
   saleLine SaleLine?
+  returnCases ReturnCase[]
+  listings Listing[]
 
   archived   Boolean   @default(false)
   archivedAt DateTime?
@@ -95,23 +124,51 @@ model InventoryActionLog {
 
   stockUnitId String?
   stockUnit   StockUnit? @relation(fields: [stockUnitId], references: [id], onDelete: SetNull)
+  targetMarginPct   Decimal?
+  recommendedPrice  Decimal?
+  lastPricingEvalAt DateTime?
+}
+
+model Listing {
+  id          String        @id @default(uuid())
+  stockUnitId String
+  platform    String
+  listingId   String
+  url         String?
+  askPrice    Decimal       @default(0)
+  status      ListingStatus @default(ACTIVE)
+  listedAt    DateTime      @default(now())
+  endedAt     DateTime?
+  createdAt   DateTime      @default(now())
+
+  stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Cascade)
+
+  @@index([stockUnitId])
+  @@index([platform])
+  @@unique([platform, listingId])
 }
 
 model Sale {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   platform        String
-  saleDate        DateTime @default(now())
+  saleDate        DateTime  @default(now())
   orderRef        String?
-  shippingCharged Decimal  @default(0)
-  platformFees    Decimal  @default(0)
-  shippingCost    Decimal  @default(0)
-  otherCosts      Decimal  @default(0)
+  shippingCharged Decimal   @default(0)
+  platformFees    Decimal   @default(0)
+  shippingCost    Decimal   @default(0)
+  otherCosts      Decimal   @default(0)
   notes           String?
-  createdAt       DateTime @default(now())
-  archived        Boolean  @default(false)
+  createdAt       DateTime  @default(now())
+  archived        Boolean   @default(false)
   archivedAt      DateTime?
+  fulfillmentStatus FulfillmentStatus @default(PENDING)
+  trackingNumber  String?
+  carrier         String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
 
   lines SaleLine[]
+  returnCases ReturnCase[]
 }
 
 model SaleLine {
@@ -123,4 +180,23 @@ model SaleLine {
 
   sale      Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
   stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Restrict)
+}
+
+model ReturnCase {
+  id                 String   @id @default(uuid())
+  saleId             String
+  stockUnitId        String
+  reason             String
+  openedAt           DateTime @default(now())
+  closedAt           DateTime?
+  refundAmount       Decimal  @default(0)
+  returnShippingCost Decimal  @default(0)
+  restockable        Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  sale      Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([stockUnitId])
 }

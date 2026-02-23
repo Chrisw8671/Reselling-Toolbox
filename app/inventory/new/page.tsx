@@ -92,6 +92,7 @@ export default function NewInventoryPage() {
 
   const [missingFields, setMissingFields] = useState<MissingKey[]>([]);
   const [msg, setMsg] = useState("");
+  const [importingFromUrl, setImportingFromUrl] = useState(false);
 
   // Fetch SKU on load
   useEffect(() => {
@@ -105,6 +106,19 @@ export default function NewInventoryPage() {
     }
     fetchSku();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const title = (params.get("title") ?? "").trim();
+    const brandFromQuery = (params.get("brand") ?? "").trim();
+    const targetBuy = (params.get("targetBuy") ?? "").trim();
+
+    if (title && !titleOverride) setTitleOverride(title);
+    if (brandFromQuery && !brand) setBrand(brandFromQuery);
+    if (targetBuy && Number.isFinite(Number(targetBuy)) && Number(targetBuy) > 0) {
+      setPurchaseCost(Number(targetBuy).toFixed(2));
+    }
+  }, [titleOverride, brand]);
 
   // Load locations for dropdown
   useEffect(() => {
@@ -245,6 +259,73 @@ export default function NewInventoryPage() {
     if (res2.ok && data2?.sku) setSku(data2.sku);
 
     setTimeout(() => titleRef.current?.focus(), 0);
+  }
+
+  async function importFromPurchaseUrl() {
+    const url = purchaseUrl.trim();
+    if (!url) {
+      setMsg("Add a purchase URL first.");
+      return;
+    }
+
+    setImportingFromUrl(true);
+    setMsg("Importing listing data...");
+
+    const res = await fetch("/api/stock/import-from-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    }).catch(() => null);
+
+    if (!res) {
+      setMsg("Could not import data from listing URL.");
+      setImportingFromUrl(false);
+      return;
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMsg(data.error ?? "Could not import data from listing URL.");
+      setImportingFromUrl(false);
+      return;
+    }
+
+    const imported = data?.imported ?? {};
+
+    if (!titleOverride.trim() && imported.titleOverride) {
+      setTitleOverride(String(imported.titleOverride));
+    }
+
+    if (!brand.trim() && imported.brand) {
+      setBrand(String(imported.brand));
+    }
+
+    if ((!condition || condition === "") && imported.condition) {
+      setCondition(String(imported.condition));
+    }
+
+    if ((!size || size === "") && imported.size) {
+      setSize(String(imported.size));
+    }
+
+    if ((purchaseCost === "0" || !purchaseCost.trim()) && imported.purchaseCost) {
+      const raw = String(imported.purchaseCost).replace(/[^0-9.]/g, "");
+      if (raw) setPurchaseCost(raw);
+    }
+
+    if (!purchasedFromChoice && imported.purchasedFrom) {
+      const source = String(imported.purchasedFrom);
+      if (PURCHASED_FROM_OPTIONS.includes(source as (typeof PURCHASED_FROM_OPTIONS)[number])) {
+        setPurchasedFromChoice(source as (typeof PURCHASED_FROM_OPTIONS)[number]);
+      }
+    }
+
+    if (!notes.trim() && imported.notesSnippet) {
+      setNotes(String(imported.notesSnippet));
+    }
+
+    setMsg("Imported listing data ✓");
+    setImportingFromUrl(false);
   }
 
   return (
@@ -441,11 +522,22 @@ export default function NewInventoryPage() {
 
             <label style={{ gridColumn: "1 / -1" }}>
               Purchase URL
-              <input
-                value={purchaseUrl}
-                onChange={(e) => setPurchaseUrl(e.target.value)}
-                placeholder="https://..."
-              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  style={{ flex: 1 }}
+                  value={purchaseUrl}
+                  onChange={(e) => setPurchaseUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={importFromPurchaseUrl}
+                  disabled={importingFromUrl}
+                >
+                  {importingFromUrl ? "Importing..." : "Import data"}
+                </button>
+              </div>
             </label>
           </div>
         </div>
