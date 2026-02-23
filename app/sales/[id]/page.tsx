@@ -3,8 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import SaleArchiveButton from "@/components/SaleArchiveButton";
 import ReturnManager from "@/components/ReturnManager";
+import SaleFulfillmentEditor from "@/components/SaleFulfillmentEditor";
+import { FULFILLMENT_LABEL, FulfillmentStatus } from "@/lib/fulfillment";
 
 type Props = { params: Promise<{ id: string }> };
+
+function toDatetimeLocal(date: Date | null): string {
+  if (!date) return "";
+  const tzOffset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - tzOffset * 60_000);
+  return local.toISOString().slice(0, 16);
+}
 
 export default async function SaleDetailPage({ params }: Props) {
   const { id } = await params;
@@ -35,6 +44,12 @@ export default async function SaleDetailPage({ params }: Props) {
         },
         orderBy: { openedAt: "desc" },
       },
+      archivedAt: true,
+      fulfillmentStatus: true,
+      trackingNumber: true,
+      carrier: true,
+      shippedAt: true,
+      deliveredAt: true,
       lines: {
         select: {
           salePrice: true,
@@ -97,13 +112,13 @@ export default async function SaleDetailPage({ params }: Props) {
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Sale</h1>
           <div className="muted" style={{ marginTop: 4 }}>
             {sale.platform} • {sale.saleDate.toLocaleDateString()} •{" "}
-            {sale.orderRef ?? "—"}
+            {sale.orderRef ?? "—"} •{" "}
+            {FULFILLMENT_LABEL[sale.fulfillmentStatus as FulfillmentStatus]}
             {sale.archivedAt ? " • Archived" : ""}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          {/* ✅ new Archive/Unarchive button */}
           <SaleArchiveButton saleId={sale.id} archived={!!sale.archivedAt} />
 
           <Link className="btn" href="/sales">
@@ -117,6 +132,13 @@ export default async function SaleDetailPage({ params }: Props) {
         saleId={sale.id}
         lines={sale.lines}
         existingCases={sale.returnCases}
+      <SaleFulfillmentEditor
+        saleId={sale.id}
+        fulfillmentStatus={sale.fulfillmentStatus as FulfillmentStatus}
+        trackingNumber={sale.trackingNumber ?? ""}
+        carrier={sale.carrier ?? ""}
+        shippedAt={toDatetimeLocal(sale.shippedAt)}
+        deliveredAt={toDatetimeLocal(sale.deliveredAt)}
       />
 
       <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
@@ -174,7 +196,6 @@ export default async function SaleDetailPage({ params }: Props) {
         )}
       </div>
 
-      {/* Line items */}
       <div className="tableWrap">
         <table className="table">
           <thead className="thead">

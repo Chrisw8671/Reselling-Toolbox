@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import {
-  moneyGBP,
-  startOfMonth,
-  startOfWeekMonday,
-  isoDateFromDate,
-} from "@/lib/format";
+import { moneyGBP, startOfMonth, startOfWeekMonday, isoDateFromDate } from "@/lib/format";
 
 export default async function HomePage() {
   const now = new Date();
@@ -19,7 +14,12 @@ export default async function HomePage() {
     inStockCount,
     listedCount,
     soldCount,
+    awaitingShipmentCount,
+    shippedNotDeliveredCount,
+    issueCount,
+    needsPriceReviewCount,
     salesThisMonth,
+    listingCounts,
   ] = await Promise.all([
     prisma.stockUnit.count({ where: { archived: false } }),
     prisma.stockUnit.count({
@@ -28,6 +28,18 @@ export default async function HomePage() {
     prisma.stockUnit.count({ where: { archived: false, status: "IN_STOCK" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "LISTED" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "SOLD" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "PENDING" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "SHIPPED" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "ISSUE" } }),
+    prisma.stockUnit.count({
+      where: {
+        archived: false,
+        status: "LISTED",
+        purchasedAt: {
+          lte: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
+        },
+      },
+    }),
     prisma.sale.findMany({
       where: { archived: false, saleDate: { gte: monthStart } },
       select: {
@@ -43,7 +55,14 @@ export default async function HomePage() {
         },
       },
     }),
+    prisma.listing.groupBy({
+      by: ["stockUnitId"],
+      _count: { _all: true },
+    }),
   ]);
+
+  const crossListedItems = listingCounts.filter((x) => x._count._all >= 2).length;
+  const singlePlatformOnlyItems = listingCounts.filter((x) => x._count._all === 1).length;
 
   // Profit this month
   const profitThisMonth = salesThisMonth.reduce((sum, s) => {
@@ -123,9 +142,7 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Profit this month</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {moneyGBP(profitThisMonth)}
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{moneyGBP(profitThisMonth)}</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Excludes archived sales
           </div>
@@ -133,11 +150,25 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Sell-through (active)</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {sellThrough.toFixed(1)}%
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{sellThrough.toFixed(1)}%</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Sold / (In Stock + Listed + Sold)
+          </div>
+        </div>
+
+        <div className="tableWrap" style={{ padding: 16 }}>
+          <div className="muted">Cross-listed items</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{crossListedItems}</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Listed on 2+ platforms
+          </div>
+        </div>
+
+        <div className="tableWrap" style={{ padding: 16 }}>
+          <div className="muted">Single-platform only</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{singlePlatformOnlyItems}</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Opportunities to cross-list
           </div>
         </div>
       </div>
@@ -192,6 +223,52 @@ export default async function HomePage() {
           </Link>
 
           <Link
+            href="/sales?fulfillmentStatus=PENDING"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Awaiting shipment</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>{awaitingShipmentCount}</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Pending fulfillment
+            </div>
+          </Link>
+
+          <Link
+            href="/sales?fulfillmentStatus=SHIPPED"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Shipped not delivered</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>
+              {shippedNotDeliveredCount}
+            </div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              In transit
+            </div>
+          </Link>
+
+          <Link
+            href="/sales?fulfillmentStatus=ISSUE"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Issues</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>{issueCount}</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Needs attention
+            href="/inventory?status=LISTED&age_min=45&needs_price_review=1"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Needs price review</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>{needsPriceReviewCount}</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Listed for 45+ days
+            </div>
+          </Link>
+
+          <Link
             href="/settings"
             className="tableWrap"
             style={{ padding: 16, textDecoration: "none" }}
@@ -230,8 +307,8 @@ export default async function HomePage() {
         </div>
 
         <div className="muted" style={{ marginTop: 12 }}>
-          Tip: This dashboard is a great place to surface “dead stock”, “items not
-          listed after X days”, and “platform profit split”.
+          Tip: This dashboard is a great place to surface “dead stock”, “items not listed
+          after X days”, and “platform profit split”.
         </div>
       </div>
     </div>
