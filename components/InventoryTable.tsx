@@ -11,7 +11,9 @@ type Item = {
   status: string;
   purchaseCost: number;
   createdAt: string;
+  updatedAt: string;
   location: { code: string } | null;
+
   purchasedFrom?: string | null;
   purchaseRef?: string | null;
   brand?: string | null;
@@ -23,10 +25,21 @@ type Item = {
   pricingAlert: boolean;
 };
 
-export default function InventoryTable({ items }: { items: Item[] }) {
+const STOCK_STATUSES = ["IN_STOCK", "LISTED", "SOLD", "RETURNED", "WRITTEN_OFF"];
+
+export default function InventoryTable({
+  items,
+  quickAction,
+}: {
+  items: Item[];
+  quickAction?: "MARKDOWN_15" | null;
+}) {
   const router = useRouter();
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
+  const [statusValue, setStatusValue] = useState("");
+  const [markdownPercent, setMarkdownPercent] = useState("15");
+  const [locationCode, setLocationCode] = useState("");
 
   const selectedSkus = useMemo(
     () =>
@@ -34,6 +47,16 @@ export default function InventoryTable({ items }: { items: Item[] }) {
         .filter(([, v]) => v)
         .map(([k]) => k),
     [selected],
+  );
+
+  const selectedUpdatedAt = useMemo(
+    () =>
+      selectedSkus.reduce<Record<string, string>>((acc, sku) => {
+        const row = items.find((it) => it.sku === sku);
+        if (row?.updatedAt) acc[sku] = row.updatedAt;
+        return acc;
+      }, {}),
+    [items, selectedSkus],
   );
 
   const allChecked = items.length > 0 && selectedSkus.length === items.length;
@@ -49,29 +72,46 @@ export default function InventoryTable({ items }: { items: Item[] }) {
     setSelected((prev) => ({ ...prev, [sku]: !prev[sku] }));
   }
 
-  async function archiveSelected() {
+  async function runBulkAction(payload: Record<string, unknown>, successMessage: string) {
     if (selectedSkus.length === 0) return;
-    if (!confirm(`Archive ${selectedSkus.length} item(s)?`)) return;
 
     setBusy(true);
     try {
-      const res = await fetch("/api/stock/archive-many", {
+      const res = await fetch("/api/stock/batch-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ skus: selectedSkus }),
+        body: JSON.stringify({
+          skus: selectedSkus,
+          expectedUpdatedAt: selectedUpdatedAt,
+          ...payload,
+        }),
       });
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        alert(data?.error ?? "Archive failed");
+        alert(data?.error ?? "Bulk update failed");
         return;
       }
 
+      const conflicts = Array.isArray(data?.conflictSkus) ? data.conflictSkus.length : 0;
+      const conflictMessage = conflicts
+        ? `\n${conflicts} item(s) skipped due to concurrent updates.`
+        : "";
+
+      alert(`${successMessage}${conflictMessage}`);
       setSelected({});
       router.refresh();
     } finally {
       setBusy(false);
     }
+  }
+
+  async function archiveSelected() {
+    if (!confirm(`Archive ${selectedSkus.length} item(s)?`)) return;
+    await runBulkAction(
+      { action: "archive" },
+      `Archived ${selectedSkus.length} item(s).`,
+    );
   }
 
   return (
@@ -82,13 +122,92 @@ export default function InventoryTable({ items }: { items: Item[] }) {
           justifyContent: "space-between",
           gap: 12,
           padding: 12,
+          flexWrap: "wrap",
         }}
       >
         <div className="muted" style={{ fontSize: 13 }}>
           {items.length} item(s) • Selected: {selectedSkus.length}
         </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end" }}>
+          <label style={{ minWidth: 180 }}>
+            Set status
+            <select
+              value={statusValue}
+              onChange={(e) => setStatusValue(e.target.value)}
+              style={{ width: "100%" }}
+            >
+              <option value="">Choose…</option>
+              {STOCK_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {formatStatus(status)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="btn"
+            type="button"
+            disabled={busy || selectedSkus.length === 0 || !statusValue}
+            onClick={() =>
+              runBulkAction(
+                { action: "set_status", status: statusValue },
+                `Updated status for ${selectedSkus.length} item(s).`,
+              )
+            }
+          >
+            Apply status
+          </button>
+
+          <label style={{ minWidth: 140 }}>
+            Markdown %
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              value={markdownPercent}
+              onChange={(e) => setMarkdownPercent(e.target.value)}
+              style={{ width: "100%" }}
+            />
+          </label>
+          <button
+            className="btn"
+            type="button"
+            disabled={busy || selectedSkus.length === 0}
+            onClick={() =>
+              runBulkAction(
+                { action: "markdown", markdownPercent: Number(markdownPercent) },
+                `Applied ${markdownPercent}% markdown to ${selectedSkus.length} item(s).`,
+              )
+            }
+          >
+            Apply markdown
+          </button>
+
+          <label style={{ minWidth: 140 }}>
+            Move location
+            <input
+              value={locationCode}
+              onChange={(e) => setLocationCode(e.target.value)}
+              placeholder="BOX-01"
+              style={{ width: "100%" }}
+            />
+          </label>
+          <button
+            className="btn"
+            type="button"
+            disabled={busy || selectedSkus.length === 0 || !locationCode.trim()}
+            onClick={() =>
+              runBulkAction(
+                { action: "move_location", locationCode },
+                `Moved ${selectedSkus.length} item(s) to ${locationCode.toUpperCase()}.`,
+              )
+            }
+          >
+            Move
+          </button>
+
           <button
             className="btn"
             type="button"
@@ -96,8 +215,25 @@ export default function InventoryTable({ items }: { items: Item[] }) {
             onClick={archiveSelected}
             style={{ opacity: busy || selectedSkus.length === 0 ? 0.6 : 1 }}
           >
-            {busy ? "Archiving..." : `Archive selected (${selectedSkus.length})`}
+            {busy ? "Working..." : `Archive selected (${selectedSkus.length})`}
           </button>
+
+          {quickAction === "MARKDOWN_15" && (
+            <button
+              className="btn"
+              type="button"
+              disabled={busy || selectedSkus.length === 0}
+              onClick={() =>
+                runBulkAction(
+                  { action: "markdown", markdownPercent: 15 },
+                  `Applied 15% markdown to ${selectedSkus.length} aged item(s).`,
+                )
+              }
+              title="Quick action for aged inventory"
+            >
+              Mark down 15%
+            </button>
+          )}
         </div>
       </div>
 
@@ -113,6 +249,7 @@ export default function InventoryTable({ items }: { items: Item[] }) {
                 SKU
               </th>
               <th className="th">Title</th>
+
               <th className="th" style={{ width: 160 }}>
                 Purchased From
               </th>
@@ -171,6 +308,7 @@ export default function InventoryTable({ items }: { items: Item[] }) {
                 <td className="td titleCell">
                   {it.titleOverride ?? <span className="muted">—</span>}
                 </td>
+
                 <td className="td">
                   {it.purchasedFrom ? it.purchasedFrom : <span className="muted">—</span>}
                 </td>

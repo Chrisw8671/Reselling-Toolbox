@@ -15,6 +15,7 @@ type Props = {
     q?: string;
     status?: string;
     in_stock?: string;
+    age_min?: string;
     platform?: string;
     listed_on_any?: string;
     listed_on_count_min?: string;
@@ -28,6 +29,8 @@ export default async function InventoryPage({ searchParams }: Props) {
   const q = (sp.q ?? "").trim();
   const statusParam = (sp.status ?? "").trim();
   const inStock = (sp.in_stock ?? "") === "1";
+  const ageMin = Number(sp.age_min ?? "");
+  const hasAgeFilter = Number.isFinite(ageMin) && ageMin > 0;
   const platform = (sp.platform ?? "").trim();
   const listedOnAny = (sp.listed_on_any ?? "") === "1";
   const listedOnCountMin = Number(sp.listed_on_count_min ?? "");
@@ -40,6 +43,11 @@ export default async function InventoryPage({ searchParams }: Props) {
   const where: any = { archived: false };
 
   if (status) where.status = status;
+  if (hasAgeFilter) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - ageMin);
+    where.createdAt = { lte: cutoff };
+  }
 
   if (
     platform ||
@@ -104,6 +112,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       brand: true,
       size: true,
       createdAt: true,
+      updatedAt: true,
       location: { select: { code: true } },
       listings: {
         select: { platform: true },
@@ -131,6 +140,7 @@ export default async function InventoryPage({ searchParams }: Props) {
     brand: it.brand ?? "",
     size: it.size ?? "",
     createdAt: it.createdAt.toISOString(),
+    updatedAt: it.updatedAt.toISOString(),
     location: it.location ? { code: it.location.code } : null,
   }));
   const itemsPlain = items.map((it) => {
@@ -197,6 +207,7 @@ export default async function InventoryPage({ searchParams }: Props) {
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (statusParam && !inStock) qsBase.set("status", statusParam);
+  if (hasAgeFilter) qsBase.set("age_min", String(ageMin));
   if (platform) qsBase.set("platform", platform);
   if (listedOnAny) qsBase.set("listed_on_any", "1");
   if (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) {
@@ -227,6 +238,7 @@ export default async function InventoryPage({ searchParams }: Props) {
                 • Filtered
                 {q ? ` by “${q}”` : ""}
                 {status ? ` • Status: ${formatStatus(status)}` : ""}
+                {hasAgeFilter ? ` • Age: ${ageMin}+ days` : ""}
                 {safeAgeMin ? ` • Age: ${safeAgeMin}+ days` : ""}
                 {needsPriceReview ? " • Needs price review" : ""}
               </>
@@ -262,6 +274,19 @@ export default async function InventoryPage({ searchParams }: Props) {
               name="q"
               defaultValue={q}
               placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
+              style={{ width: "100%" }}
+            />
+          </label>
+
+          <label style={{ width: 220 }}>
+            Age (days min)
+            <input
+              name="age_min"
+              type="number"
+              min={1}
+              step={1}
+              defaultValue={hasAgeFilter ? String(ageMin) : ""}
+              placeholder="e.g. 90"
               style={{ width: "100%" }}
             />
           </label>
@@ -359,6 +384,7 @@ export default async function InventoryPage({ searchParams }: Props) {
             Apply
           </button>
 
+          {(q || statusParam || inStock || hasAgeFilter) && (
           {(q ||
             statusParam ||
             inStock ||
@@ -373,6 +399,11 @@ export default async function InventoryPage({ searchParams }: Props) {
         </form>
       </div>
 
+      {/* Bulk-select table */}
+      <InventoryTable
+        items={itemsPlain}
+        quickAction={hasAgeFilter && ageMin >= 90 ? "MARKDOWN_15" : null}
+      />
       <InventoryTable items={itemsPlain} />
     </div>
   );

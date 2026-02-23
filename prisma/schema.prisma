@@ -85,6 +85,7 @@ model StockUnit {
   purchasedAt   DateTime    @default(now())
   notes         String?
   createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   // ✅ NEW FIELDS (for buying/selling online)
   purchasedFrom String?
@@ -109,6 +110,20 @@ model StockUnit {
   archived   Boolean   @default(false)
   archivedAt DateTime?
 
+  actionLogs InventoryActionLog[]
+}
+
+model InventoryActionLog {
+  id           String   @id @default(uuid())
+  action       String
+  skuCount     Int
+  skus         String[]
+  details      Json?
+  createdAt    DateTime @default(now())
+  conflictSkus String[] @default([])
+
+  stockUnitId String?
+  stockUnit   StockUnit? @relation(fields: [stockUnitId], references: [id], onDelete: SetNull)
   targetMarginPct   Decimal?
   recommendedPrice  Decimal?
   lastPricingEvalAt DateTime?
