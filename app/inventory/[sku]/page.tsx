@@ -30,6 +30,20 @@ export default async function InventoryDetailPage({ params }: Props) {
       notes: true,
       archived: true,
       createdAt: true,
+      id: true,
+      listings: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          platform: true,
+          listingId: true,
+          url: true,
+          askPrice: true,
+          status: true,
+          listedAt: true,
+          endedAt: true,
+        },
+      },
     },
   });
 
@@ -38,6 +52,7 @@ export default async function InventoryDetailPage({ params }: Props) {
   // Convert to plain JSON-safe values for client component
   const itemPlain = {
     sku: item.sku,
+    stockUnitId: item.id,
     titleOverride: item.titleOverride ?? "",
     status: item.status,
     condition: item.condition ?? "",
@@ -53,6 +68,16 @@ export default async function InventoryDetailPage({ params }: Props) {
     notes: item.notes ?? "",
     archived: item.archived,
     createdAt: item.createdAt.toISOString().slice(0, 16).replace("T", " "),
+    listings: item.listings.map((listing) => ({
+      id: listing.id,
+      platform: listing.platform,
+      listingId: listing.listingId,
+      url: listing.url ?? "",
+      askPrice: Number(listing.askPrice),
+      status: listing.status,
+      listedAt: listing.listedAt.toISOString().slice(0, 10),
+      endedAt: listing.endedAt ? listing.endedAt.toISOString().slice(0, 10) : "",
+    })),
   };
 
   return (

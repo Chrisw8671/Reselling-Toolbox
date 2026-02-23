@@ -16,6 +16,7 @@ export default async function HomePage() {
     soldCount,
     needsPriceReviewCount,
     salesThisMonth,
+    listingCounts,
   ] = await Promise.all([
     prisma.stockUnit.count({ where: { archived: false } }),
     prisma.stockUnit.count({
@@ -48,7 +49,14 @@ export default async function HomePage() {
         },
       },
     }),
+    prisma.listing.groupBy({
+      by: ["stockUnitId"],
+      _count: { _all: true },
+    }),
   ]);
+
+  const crossListedItems = listingCounts.filter((x) => x._count._all >= 2).length;
+  const singlePlatformOnlyItems = listingCounts.filter((x) => x._count._all === 1).length;
 
   // Profit this month
   const profitThisMonth = salesThisMonth.reduce((sum, s) => {
@@ -139,6 +147,22 @@ export default async function HomePage() {
           <div style={{ fontSize: 26, fontWeight: 900 }}>{sellThrough.toFixed(1)}%</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Sold / (In Stock + Listed + Sold)
+          </div>
+        </div>
+
+        <div className="tableWrap" style={{ padding: 16 }}>
+          <div className="muted">Cross-listed items</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{crossListedItems}</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Listed on 2+ platforms
+          </div>
+        </div>
+
+        <div className="tableWrap" style={{ padding: 16 }}>
+          <div className="muted">Single-platform only</div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{singlePlatformOnlyItems}</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Opportunities to cross-list
           </div>
         </div>
       </div>
