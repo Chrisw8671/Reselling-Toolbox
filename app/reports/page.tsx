@@ -43,8 +43,7 @@ export default async function ReportsPage() {
   const since60 = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const since90 = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-  const [sales, salesThisMonth, stockUnits, saleLines90d] = await Promise.all([
-  const [sales, salesThisMonth, stockUnits, listings] = await Promise.all([
+  const [sales, salesThisMonth, stockUnits, saleLines90d, listings] = await Promise.all([
     prisma.sale.findMany({
       orderBy: { saleDate: "asc" },
       select: {
@@ -117,6 +116,10 @@ export default async function ReportsPage() {
                 watch: { select: { id: true, active: true } },
               },
             },
+          },
+        },
+      },
+    }),
     prisma.listing.findMany({
       select: {
         platform: true,
@@ -248,8 +251,6 @@ export default async function ReportsPage() {
     })
     .sort((a, b) => b.returnCost - a.returnCost);
 
-  // C) Inventory status pie
-  // C) Platform-level listing slices (sell-through + inventory cost)
   const platformSlices = new Map<
     string,
     { listedUnits: number; soldUnits: number; inventoryCost: number }
@@ -287,7 +288,6 @@ export default async function ReportsPage() {
     }))
     .sort((a, b) => b.listedUnits - a.listedUnits);
 
-  // D) Inventory status pie
   const statusMap = new Map<string, number>();
   for (const u of stockUnits) {
     statusMap.set(u.status, (statusMap.get(u.status) ?? 0) + 1);
@@ -297,7 +297,6 @@ export default async function ReportsPage() {
     value,
   }));
 
-  // E) Aging buckets (unsold only)
   const buckets = [
     { bucket: "0-30", count: 0 },
     { bucket: "31-60", count: 0 },
@@ -370,7 +369,9 @@ export default async function ReportsPage() {
     .map((m) => {
       const avgDaysToSell = m.units90 === 0 ? 0 : m.avgDaysToSell / m.units90;
       const grossMarginPct =
-        m.totalRevenue === 0 ? 0 : ((m.totalRevenue - m.totalCost) / m.totalRevenue) * 100;
+        m.totalRevenue === 0
+          ? 0
+          : ((m.totalRevenue - m.totalCost) / m.totalRevenue) * 100;
 
       return {
         productId: m.productId,
@@ -383,7 +384,9 @@ export default async function ReportsPage() {
         watched: m.watched,
       };
     })
-    .sort((a, b) => b.units30 - a.units30 || b.units60 - a.units60 || b.units90 - a.units90)
+    .sort(
+      (a, b) => b.units30 - a.units30 || b.units60 - a.units60 || b.units90 - a.units90,
+    )
     .slice(0, 12);
 
   return (
@@ -483,7 +486,13 @@ export default async function ReportsPage() {
       </div>
 
       <div className="tableWrap" style={{ marginBottom: 16, overflowX: "auto" }}>
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid #eee", fontWeight: 700 }}>
+        <div
+          style={{
+            padding: "12px 16px",
+            borderBottom: "1px solid #eee",
+            fontWeight: 700,
+          }}
+        >
           Top movers (rolling 30 / 60 / 90 days)
         </div>
 

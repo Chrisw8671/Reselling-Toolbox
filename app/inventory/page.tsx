@@ -19,7 +19,6 @@ type Props = {
     platform?: string;
     listed_on_any?: string;
     listed_on_count_min?: string;
-    age_min?: string;
     needs_price_review?: string;
   }>;
 };
@@ -29,8 +28,6 @@ export default async function InventoryPage({ searchParams }: Props) {
   const q = (sp.q ?? "").trim();
   const statusParam = (sp.status ?? "").trim();
   const inStock = (sp.in_stock ?? "") === "1";
-  const ageMin = Number(sp.age_min ?? "");
-  const hasAgeFilter = Number.isFinite(ageMin) && ageMin > 0;
   const platform = (sp.platform ?? "").trim();
   const listedOnAny = (sp.listed_on_any ?? "") === "1";
   const listedOnCountMin = Number(sp.listed_on_count_min ?? "");
@@ -43,23 +40,6 @@ export default async function InventoryPage({ searchParams }: Props) {
   const where: any = { archived: false };
 
   if (status) where.status = status;
-  if (hasAgeFilter) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - ageMin);
-    where.createdAt = { lte: cutoff };
-  }
-
-  if (
-    platform ||
-    listedOnAny ||
-    (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0)
-  ) {
-    where.listings = {
-      some: platform
-        ? {
-            platform: { equals: platform, mode: "insensitive" },
-          }
-        : {},
   if (safeAgeMin) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - safeAgeMin);
@@ -75,6 +55,16 @@ export default async function InventoryPage({ searchParams }: Props) {
       lte: where.purchasedAt?.lte
         ? new Date(Math.min(where.purchasedAt.lte.getTime(), reviewCutoff.getTime()))
         : reviewCutoff,
+    };
+  }
+
+  if (platform || listedOnAny) {
+    where.listings = {
+      some: platform
+        ? {
+            platform: { equals: platform, mode: "insensitive" },
+          }
+        : {},
     };
   }
 
@@ -125,25 +115,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       ? items.filter((it) => it.listings.length >= listedOnCountMin)
       : items;
 
-  // Convert to plain objects for Client Component
-  const itemsPlain = filteredByCount.map((it) => ({
-    sku: it.sku,
-    titleOverride: it.titleOverride,
-    status: it.status,
-    purchaseCost: Number(it.purchaseCost),
-    extraCost: Number(it.extraCost ?? 0),
-    condition: it.condition ?? "",
-    purchasedAt: it.purchasedAt ? it.purchasedAt.toISOString() : null,
-    purchasedFrom: it.purchasedFrom ?? "",
-    purchaseRef: it.purchaseRef ?? "",
-    purchaseUrl: it.purchaseUrl ?? "",
-    brand: it.brand ?? "",
-    size: it.size ?? "",
-    createdAt: it.createdAt.toISOString(),
-    updatedAt: it.updatedAt.toISOString(),
-    location: it.location ? { code: it.location.code } : null,
-  }));
-  const itemsPlain = items.map((it) => {
+  const itemsPlain = filteredByCount.map((it) => {
     const purchaseCost = Number(it.purchaseCost);
     const extraCost = Number(it.extraCost ?? 0);
     const targetMarginPct = Number(it.targetMarginPct ?? 25);
@@ -191,6 +163,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       brand: it.brand ?? "",
       size: it.size ?? "",
       createdAt: it.createdAt.toISOString(),
+      updatedAt: it.updatedAt.toISOString(),
       location: it.location ? { code: it.location.code } : null,
     };
   });
@@ -207,13 +180,12 @@ export default async function InventoryPage({ searchParams }: Props) {
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (statusParam && !inStock) qsBase.set("status", statusParam);
-  if (hasAgeFilter) qsBase.set("age_min", String(ageMin));
+  if (safeAgeMin) qsBase.set("age_min", String(safeAgeMin));
   if (platform) qsBase.set("platform", platform);
   if (listedOnAny) qsBase.set("listed_on_any", "1");
   if (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) {
     qsBase.set("listed_on_count_min", String(listedOnCountMin));
   }
-  if (safeAgeMin) qsBase.set("age_min", String(safeAgeMin));
   if (needsPriceReview) qsBase.set("needs_price_review", "1");
 
   const inStockOnHref = `/inventory?${new URLSearchParams({
@@ -238,7 +210,6 @@ export default async function InventoryPage({ searchParams }: Props) {
                 • Filtered
                 {q ? ` by “${q}”` : ""}
                 {status ? ` • Status: ${formatStatus(status)}` : ""}
-                {hasAgeFilter ? ` • Age: ${ageMin}+ days` : ""}
                 {safeAgeMin ? ` • Age: ${safeAgeMin}+ days` : ""}
                 {needsPriceReview ? " • Needs price review" : ""}
               </>
@@ -285,7 +256,7 @@ export default async function InventoryPage({ searchParams }: Props) {
               type="number"
               min={1}
               step={1}
-              defaultValue={hasAgeFilter ? String(ageMin) : ""}
+              defaultValue={safeAgeMin ?? ""}
               placeholder="e.g. 90"
               style={{ width: "100%" }}
             />
@@ -348,16 +319,6 @@ export default async function InventoryPage({ searchParams }: Props) {
               placeholder="e.g. 2"
               style={{ width: "100%" }}
             />
-          <label style={{ width: 140 }}>
-            Min age (days)
-            <input
-              name="age_min"
-              type="number"
-              min={1}
-              defaultValue={safeAgeMin ?? ""}
-              placeholder="45"
-              style={{ width: "100%" }}
-            />
           </label>
 
           <label
@@ -384,14 +345,14 @@ export default async function InventoryPage({ searchParams }: Props) {
             Apply
           </button>
 
-          {(q || statusParam || inStock || hasAgeFilter) && (
           {(q ||
             statusParam ||
             inStock ||
+            safeAgeMin ||
             platform ||
             listedOnAny ||
-            listedOnCountMin) && (
-          {(q || statusParam || inStock || safeAgeMin || needsPriceReview) && (
+            (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) ||
+            needsPriceReview) && (
             <Link className="btn" href="/inventory">
               Clear
             </Link>
@@ -399,12 +360,10 @@ export default async function InventoryPage({ searchParams }: Props) {
         </form>
       </div>
 
-      {/* Bulk-select table */}
       <InventoryTable
         items={itemsPlain}
-        quickAction={hasAgeFilter && ageMin >= 90 ? "MARKDOWN_15" : null}
+        quickAction={safeAgeMin && safeAgeMin >= 90 ? "MARKDOWN_15" : null}
       />
-      <InventoryTable items={itemsPlain} />
     </div>
   );
 }
