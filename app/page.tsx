@@ -1,11 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import {
-  moneyGBP,
-  startOfMonth,
-  startOfWeekMonday,
-  isoDateFromDate,
-} from "@/lib/format";
+import { moneyGBP, startOfMonth, startOfWeekMonday, isoDateFromDate } from "@/lib/format";
 
 export default async function HomePage() {
   const now = new Date();
@@ -19,6 +14,9 @@ export default async function HomePage() {
     inStockCount,
     listedCount,
     soldCount,
+    awaitingShipmentCount,
+    shippedNotDeliveredCount,
+    issueCount,
     salesThisMonth,
   ] = await Promise.all([
     prisma.stockUnit.count({ where: { archived: false } }),
@@ -28,6 +26,9 @@ export default async function HomePage() {
     prisma.stockUnit.count({ where: { archived: false, status: "IN_STOCK" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "LISTED" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "SOLD" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "PENDING" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "SHIPPED" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "ISSUE" } }),
     prisma.sale.findMany({
       where: { archived: false, saleDate: { gte: monthStart } },
       select: {
@@ -123,9 +124,7 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Profit this month</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {moneyGBP(profitThisMonth)}
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{moneyGBP(profitThisMonth)}</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Excludes archived sales
           </div>
@@ -133,9 +132,7 @@ export default async function HomePage() {
 
         <div className="tableWrap" style={{ padding: 16 }}>
           <div className="muted">Sell-through (active)</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>
-            {sellThrough.toFixed(1)}%
-          </div>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>{sellThrough.toFixed(1)}%</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             Sold / (In Stock + Listed + Sold)
           </div>
@@ -192,6 +189,44 @@ export default async function HomePage() {
           </Link>
 
           <Link
+            href="/sales?fulfillmentStatus=PENDING"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Awaiting shipment</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>{awaitingShipmentCount}</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Pending fulfillment
+            </div>
+          </Link>
+
+          <Link
+            href="/sales?fulfillmentStatus=SHIPPED"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Shipped not delivered</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>
+              {shippedNotDeliveredCount}
+            </div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              In transit
+            </div>
+          </Link>
+
+          <Link
+            href="/sales?fulfillmentStatus=ISSUE"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Issues</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>{issueCount}</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Needs attention
+            </div>
+          </Link>
+
+          <Link
             href="/settings"
             className="tableWrap"
             style={{ padding: 16, textDecoration: "none" }}
@@ -230,8 +265,8 @@ export default async function HomePage() {
         </div>
 
         <div className="muted" style={{ marginTop: 12 }}>
-          Tip: This dashboard is a great place to surface “dead stock”, “items not
-          listed after X days”, and “platform profit split”.
+          Tip: This dashboard is a great place to surface “dead stock”, “items not listed
+          after X days”, and “platform profit split”.
         </div>
       </div>
     </div>

@@ -3,22 +3,30 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isoDate, moneyGBP } from "@/lib/format";
+import {
+  FULFILLMENT_COLORS,
+  FULFILLMENT_LABEL,
+  FulfillmentStatus,
+  NEXT_STATUS_OPTIONS,
+} from "@/lib/fulfillment";
 
 type SaleRow = {
   id: string;
-  saleDate: string; // ISO
+  saleDate: string;
   platform: string;
   itemCount: number;
   revenue: number;
   costs: number;
   profit: number;
   orderRef: string;
+  fulfillmentStatus: FulfillmentStatus;
 };
 
 export default function SalesTable({ rows }: { rows: SaleRow[] }) {
   const router = useRouter();
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
 
   const selectedIds = useMemo(
     () =>
@@ -89,9 +97,27 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
     }
   }
 
+  async function moveStatus(id: string, status: FulfillmentStatus) {
+    setUpdatingStatus((prev) => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetch(`/api/sales/${encodeURIComponent(id)}/fulfillment`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fulfillmentStatus: status }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error ?? "Status update failed");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setUpdatingStatus((prev) => ({ ...prev, [id]: false }));
+    }
+  }
+
   return (
     <div className="tableWrap">
-      {/* Bulk actions row (matches InventoryTable) */}
       <div
         style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}
       >
@@ -125,6 +151,12 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
               </th>
               <th className="th" style={{ width: 160 }}>
                 Platform
+              </th>
+              <th className="th" style={{ width: 100 }}>
+                Status
+              </th>
+              <th className="th" style={{ width: 240 }}>
+                Quick move
               </th>
               <th className="th" style={{ width: 90 }}>
                 Items
@@ -162,6 +194,41 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
 
                 <td className="td">{isoDate(r.saleDate)}</td>
                 <td className="td">{r.platform}</td>
+                <td className="td">
+                  <span
+                    className="badge"
+                    style={{
+                      backgroundColor: FULFILLMENT_COLORS[r.fulfillmentStatus],
+                      color: "white",
+                    }}
+                  >
+                    {FULFILLMENT_LABEL[r.fulfillmentStatus]}
+                  </span>
+                </td>
+                <td className="td" onClick={(e) => e.stopPropagation()}>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {NEXT_STATUS_OPTIONS[r.fulfillmentStatus].length === 0 ? (
+                      <span className="muted">—</span>
+                    ) : (
+                      NEXT_STATUS_OPTIONS[r.fulfillmentStatus].map((next) => (
+                        <button
+                          key={next}
+                          className="iconBtn"
+                          type="button"
+                          title={`Set to ${FULFILLMENT_LABEL[next]}`}
+                          disabled={!!updatingStatus[r.id]}
+                          onClick={() => moveStatus(r.id, next)}
+                          style={{
+                            opacity: updatingStatus[r.id] ? 0.6 : 1,
+                            borderColor: FULFILLMENT_COLORS[next],
+                          }}
+                        >
+                          {FULFILLMENT_LABEL[next]}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </td>
                 <td className="td">{r.itemCount}</td>
                 <td className="td">{moneyGBP(r.revenue)}</td>
                 <td className="td">{moneyGBP(r.costs)}</td>
@@ -206,7 +273,7 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
 
             {rows.length === 0 && (
               <tr className="tr">
-                <td className="td muted" colSpan={9}>
+                <td className="td muted" colSpan={11}>
                   No sales yet. Create your first sale.
                 </td>
               </tr>
