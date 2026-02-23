@@ -15,6 +15,12 @@ enum StockStatus {
   WRITTEN_OFF
 }
 
+enum FulfillmentStatus {
+  PENDING
+  PACKED
+  SHIPPED
+  DELIVERED
+  ISSUE
 enum ListingStatus {
   ACTIVE
   PAUSED
@@ -139,6 +145,11 @@ model Sale {
   createdAt       DateTime  @default(now())
   archived        Boolean   @default(false)
   archivedAt      DateTime?
+  fulfillmentStatus FulfillmentStatus @default(PENDING)
+  trackingNumber  String?
+  carrier         String?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
 
   lines SaleLine[]
 }

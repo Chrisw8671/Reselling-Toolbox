@@ -3,12 +3,19 @@ import { prisma } from "@/lib/prisma";
 import SalesTable from "@/components/SalesTable";
 import { moneyGBP, startOfMonth } from "@/lib/format";
 import { Prisma } from "@prisma/client";
+import {
+  FULFILLMENT_LABEL,
+  FULFILLMENT_STATUSES,
+  FulfillmentStatus,
+  isFulfillmentStatus,
+} from "@/lib/fulfillment";
 
 type Props = {
   searchParams?: Promise<{
     q?: string;
     platform?: string;
     this_month?: string;
+    fulfillmentStatus?: string;
   }>;
 };
 
@@ -17,10 +24,15 @@ export default async function SalesPage({ searchParams }: Props) {
   const q = (sp.q ?? "").trim();
   const platform = (sp.platform ?? "").trim();
   const thisMonth = (sp.this_month ?? "") === "1";
+  const fulfillmentStatusInput = (sp.fulfillmentStatus ?? "").trim();
+  const fulfillmentStatus = isFulfillmentStatus(fulfillmentStatusInput)
+    ? fulfillmentStatusInput
+    : "";
 
-const where: Prisma.SaleWhereInput = { archived: false };
+  const where: Prisma.SaleWhereInput = { archived: false };
 
   if (platform) where.platform = platform;
+  if (fulfillmentStatus) where.fulfillmentStatus = fulfillmentStatus;
 
   if (thisMonth) {
     where.saleDate = { gte: startOfMonth(new Date()) };
@@ -31,6 +43,7 @@ const where: Prisma.SaleWhereInput = { archived: false };
       { id: { contains: q, mode: "insensitive" } },
       { orderRef: { contains: q, mode: "insensitive" } },
       { platform: { contains: q, mode: "insensitive" } },
+      { trackingNumber: { contains: q, mode: "insensitive" } },
     ];
   }
 
@@ -47,6 +60,7 @@ const where: Prisma.SaleWhereInput = { archived: false };
       platformFees: true,
       shippingCost: true,
       otherCosts: true,
+      fulfillmentStatus: true,
       lines: {
         select: {
           salePrice: true,
@@ -83,12 +97,12 @@ const where: Prisma.SaleWhereInput = { archived: false };
       revenue,
       costs,
       profit,
+      fulfillmentStatus: s.fulfillmentStatus as FulfillmentStatus,
     };
   });
 
   const totalProfit = rows.reduce((sum, r) => sum + r.profit, 0);
 
-  // dropdown options (only from unarchived sales)
   const platforms = await prisma.sale.findMany({
     where: { archived: false },
     distinct: ["platform"],
@@ -96,19 +110,17 @@ const where: Prisma.SaleWhereInput = { archived: false };
     orderBy: { platform: "asc" },
   });
 
-  // Build hrefs like Inventory does
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (platform) qsBase.set("platform", platform);
+  if (fulfillmentStatus) qsBase.set("fulfillmentStatus", fulfillmentStatus);
 
   const thisMonthOnHref = `/sales?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
     this_month: "1",
   }).toString()}`;
 
-  const thisMonthOffHref = qsBase.toString()
-    ? `/sales?${qsBase.toString()}`
-    : "/sales";
+  const thisMonthOffHref = qsBase.toString() ? `/sales?${qsBase.toString()}` : "/sales";
 
   return (
     <div className="container">
@@ -117,12 +129,15 @@ const where: Prisma.SaleWhereInput = { archived: false };
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Sales</h1>
           <div className="muted" style={{ marginTop: 4 }}>
             {rows.length} sale(s) • Total profit shown: {moneyGBP(totalProfit)}
-            {(q || platform || thisMonth) && (
+            {(q || platform || thisMonth || fulfillmentStatus) && (
               <>
                 {" "}
                 • Filtered
                 {q ? ` by “${q}”` : ""}
                 {platform ? ` • Platform: ${platform}` : ""}
+                {fulfillmentStatus
+                  ? ` • Status: ${FULFILLMENT_LABEL[fulfillmentStatus]}`
+                  : ""}
                 {thisMonth ? ` • This month only` : ""}
               </>
             )}
@@ -140,7 +155,6 @@ const where: Prisma.SaleWhereInput = { archived: false };
         </div>
       </div>
 
-      {/* Filters (same style as Inventory) */}
       <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
         <form
           action="/sales"
@@ -152,12 +166,12 @@ const where: Prisma.SaleWhereInput = { archived: false };
             alignItems: "end",
           }}
         >
-          <label style={{ flex: "1 1 320px" }}>
-            Search (Order ref, platform, id)
+          <label style={{ flex: "1 1 300px" }}>
+            Search (Order ref, platform, id, tracking)
             <input
               name="q"
               defaultValue={q}
-              placeholder='e.g. "Vinted", "ORD123", or sale id'
+              placeholder='e.g. "Vinted", "ORD123", tracking number, or sale id'
               style={{ width: "100%" }}
             />
           </label>
@@ -174,13 +188,29 @@ const where: Prisma.SaleWhereInput = { archived: false };
             </select>
           </label>
 
+          <label style={{ width: 220 }}>
+            Fulfillment
+            <select
+              name="fulfillmentStatus"
+              defaultValue={fulfillmentStatus}
+              style={{ width: "100%" }}
+            >
+              <option value="">All</option>
+              {FULFILLMENT_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {FULFILLMENT_LABEL[status]}
+                </option>
+              ))}
+            </select>
+          </label>
+
           {thisMonth && <input type="hidden" name="this_month" value="1" />}
 
           <button className="btn" type="submit">
             Apply
           </button>
 
-          {(q || platform || thisMonth) && (
+          {(q || platform || thisMonth || fulfillmentStatus) && (
             <Link className="btn" href="/sales">
               Clear
             </Link>

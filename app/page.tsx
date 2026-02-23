@@ -14,6 +14,9 @@ export default async function HomePage() {
     inStockCount,
     listedCount,
     soldCount,
+    awaitingShipmentCount,
+    shippedNotDeliveredCount,
+    issueCount,
     needsPriceReviewCount,
     salesThisMonth,
     listingCounts,
@@ -25,6 +28,9 @@ export default async function HomePage() {
     prisma.stockUnit.count({ where: { archived: false, status: "IN_STOCK" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "LISTED" } }),
     prisma.stockUnit.count({ where: { archived: false, status: "SOLD" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "PENDING" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "SHIPPED" } }),
+    prisma.sale.count({ where: { archived: false, fulfillmentStatus: "ISSUE" } }),
     prisma.stockUnit.count({
       where: {
         archived: false,
@@ -217,6 +223,40 @@ export default async function HomePage() {
           </Link>
 
           <Link
+            href="/sales?fulfillmentStatus=PENDING"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Awaiting shipment</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>{awaitingShipmentCount}</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Pending fulfillment
+            </div>
+          </Link>
+
+          <Link
+            href="/sales?fulfillmentStatus=SHIPPED"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Shipped not delivered</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>
+              {shippedNotDeliveredCount}
+            </div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              In transit
+            </div>
+          </Link>
+
+          <Link
+            href="/sales?fulfillmentStatus=ISSUE"
+            className="tableWrap"
+            style={{ padding: 16, textDecoration: "none" }}
+          >
+            <div className="muted">Issues</div>
+            <div style={{ fontSize: 30, fontWeight: 900 }}>{issueCount}</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Needs attention
             href="/inventory?status=LISTED&age_min=45&needs_price_review=1"
             className="tableWrap"
             style={{ padding: 16, textDecoration: "none" }}
