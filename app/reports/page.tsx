@@ -44,6 +44,7 @@ export default async function ReportsPage() {
   const since90 = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   const [sales, salesThisMonth, stockUnits, saleLines90d] = await Promise.all([
+  const [sales, salesThisMonth, stockUnits, listings] = await Promise.all([
     prisma.sale.findMany({
       orderBy: { saleDate: "asc" },
       select: {
@@ -104,6 +105,14 @@ export default async function ReportsPage() {
                 watch: { select: { id: true, active: true } },
               },
             },
+    prisma.listing.findMany({
+      select: {
+        platform: true,
+        stockUnit: {
+          select: {
+            id: true,
+            status: true,
+            purchaseCost: true,
           },
         },
       },
@@ -179,6 +188,45 @@ export default async function ReportsPage() {
     .map(([platform, profit]) => ({ platform, profit: Number(profit.toFixed(2)) }))
     .sort((a, b) => b.profit - a.profit);
 
+  // C) Platform-level listing slices (sell-through + inventory cost)
+  const platformSlices = new Map<
+    string,
+    { listedUnits: number; soldUnits: number; inventoryCost: number }
+  >();
+  const dedupe = new Set<string>();
+
+  for (const listing of listings) {
+    const dedupeKey = `${listing.platform}::${listing.stockUnit.id}`;
+    if (dedupe.has(dedupeKey)) continue;
+    dedupe.add(dedupeKey);
+
+    const row = platformSlices.get(listing.platform) ?? {
+      listedUnits: 0,
+      soldUnits: 0,
+      inventoryCost: 0,
+    };
+
+    row.listedUnits += 1;
+    if (listing.stockUnit.status === "SOLD") row.soldUnits += 1;
+    row.inventoryCost += Number(listing.stockUnit.purchaseCost);
+
+    platformSlices.set(listing.platform, row);
+  }
+
+  const platformSellThroughSlices = Array.from(platformSlices.entries())
+    .map(([platform, data]) => ({
+      platform,
+      listedUnits: data.listedUnits,
+      soldUnits: data.soldUnits,
+      sellThroughPct:
+        data.listedUnits === 0
+          ? 0
+          : Number(((data.soldUnits / data.listedUnits) * 100).toFixed(1)),
+      inventoryCost: Number(data.inventoryCost.toFixed(2)),
+    }))
+    .sort((a, b) => b.listedUnits - a.listedUnits);
+
+  // D) Inventory status pie
   const statusMap = new Map<string, number>();
   for (const u of stockUnits) {
     statusMap.set(u.status, (statusMap.get(u.status) ?? 0) + 1);
@@ -188,6 +236,7 @@ export default async function ReportsPage() {
     value,
   }));
 
+  // E) Aging buckets (unsold only)
   const buckets = [
     { bucket: "0-30", count: 0 },
     { bucket: "31-60", count: 0 },
@@ -385,6 +434,44 @@ export default async function ReportsPage() {
         inventoryStatus={inventoryStatus}
         agingBuckets={buckets}
       />
+
+      <div className="tableWrap" style={{ padding: 16, marginTop: 16 }}>
+        <div style={{ fontWeight: 700, marginBottom: 10 }}>
+          Platform sell-through and inventory slices
+        </div>
+
+        <div style={{ overflowX: "auto" }}>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Listed Units</th>
+                <th>Sold Units</th>
+                <th>Sell-through %</th>
+                <th>Inventory Cost Slice</th>
+              </tr>
+            </thead>
+            <tbody>
+              {platformSellThroughSlices.map((row) => (
+                <tr key={row.platform}>
+                  <td>{row.platform}</td>
+                  <td>{row.listedUnits}</td>
+                  <td>{row.soldUnits}</td>
+                  <td>{row.sellThroughPct.toFixed(1)}%</td>
+                  <td>£{row.inventoryCost.toFixed(2)}</td>
+                </tr>
+              ))}
+              {platformSellThroughSlices.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="muted">
+                    No platform listing data yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

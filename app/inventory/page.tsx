@@ -2,12 +2,24 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import InventoryTable from "@/components/InventoryTable";
 import { formatStatus } from "@/lib/status";
+import {
+  calcBreakEvenPrice,
+  calcRecommendedMarkdownPrice,
+  calcTargetPrice,
+  getInventoryAgeDays,
+  PRICING_AGE_THRESHOLDS,
+} from "@/lib/pricing";
 
 type Props = {
   searchParams?: Promise<{
     q?: string;
     status?: string;
     in_stock?: string;
+    platform?: string;
+    listed_on_any?: string;
+    listed_on_count_min?: string;
+    age_min?: string;
+    needs_price_review?: string;
   }>;
 };
 
@@ -16,25 +28,57 @@ export default async function InventoryPage({ searchParams }: Props) {
   const q = (sp.q ?? "").trim();
   const statusParam = (sp.status ?? "").trim();
   const inStock = (sp.in_stock ?? "") === "1";
+  const platform = (sp.platform ?? "").trim();
+  const listedOnAny = (sp.listed_on_any ?? "") === "1";
+  const listedOnCountMin = Number(sp.listed_on_count_min ?? "");
+  const ageMin = Number.parseInt((sp.age_min ?? "").trim(), 10);
+  const needsPriceReview = (sp.needs_price_review ?? "") === "1";
 
   const status = inStock ? "IN_STOCK" : statusParam;
+  const safeAgeMin = Number.isFinite(ageMin) && ageMin > 0 ? ageMin : null;
 
   const where: any = { archived: false };
 
   if (status) where.status = status;
+
+  if (
+    platform ||
+    listedOnAny ||
+    (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0)
+  ) {
+    where.listings = {
+      some: platform
+        ? {
+            platform: { equals: platform, mode: "insensitive" },
+          }
+        : {},
+  if (safeAgeMin) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - safeAgeMin);
+    where.purchasedAt = { lte: cutoff };
+  }
+
+  if (needsPriceReview) {
+    const reviewCutoff = new Date();
+    reviewCutoff.setDate(reviewCutoff.getDate() - PRICING_AGE_THRESHOLDS.markdown45);
+
+    where.status = "LISTED";
+    where.purchasedAt = {
+      lte: where.purchasedAt?.lte
+        ? new Date(Math.min(where.purchasedAt.lte.getTime(), reviewCutoff.getTime()))
+        : reviewCutoff,
+    };
+  }
 
   if (q) {
     where.OR = [
       { sku: { contains: q, mode: "insensitive" } },
       { titleOverride: { contains: q, mode: "insensitive" } },
       { condition: { contains: q, mode: "insensitive" } },
-
-      // ✅ new searchable fields
       { purchasedFrom: { contains: q, mode: "insensitive" } },
       { purchaseRef: { contains: q, mode: "insensitive" } },
       { brand: { contains: q, mode: "insensitive" } },
       { size: { contains: q, mode: "insensitive" } },
-
       { location: { is: { code: { contains: q, mode: "insensitive" } } } },
     ];
   }
@@ -49,6 +93,9 @@ export default async function InventoryPage({ searchParams }: Props) {
       status: true,
       purchaseCost: true,
       extraCost: true,
+      targetMarginPct: true,
+      recommendedPrice: true,
+      lastPricingEvalAt: true,
       condition: true,
       purchasedAt: true,
       purchasedFrom: true,
@@ -58,11 +105,19 @@ export default async function InventoryPage({ searchParams }: Props) {
       size: true,
       createdAt: true,
       location: { select: { code: true } },
+      listings: {
+        select: { platform: true },
+      },
     },
   });
 
+  const filteredByCount =
+    Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
+      ? items.filter((it) => it.listings.length >= listedOnCountMin)
+      : items;
+
   // Convert to plain objects for Client Component
-  const itemsPlain = items.map((it) => ({
+  const itemsPlain = filteredByCount.map((it) => ({
     sku: it.sku,
     titleOverride: it.titleOverride,
     status: it.status,
@@ -78,12 +133,77 @@ export default async function InventoryPage({ searchParams }: Props) {
     createdAt: it.createdAt.toISOString(),
     location: it.location ? { code: it.location.code } : null,
   }));
+  const itemsPlain = items.map((it) => {
+    const purchaseCost = Number(it.purchaseCost);
+    const extraCost = Number(it.extraCost ?? 0);
+    const targetMarginPct = Number(it.targetMarginPct ?? 25);
+    const ageDays = getInventoryAgeDays(it.purchasedAt);
+
+    const breakEvenPrice = calcBreakEvenPrice({
+      purchaseCost,
+      fees: extraCost,
+    });
+
+    const baseTargetPrice = calcTargetPrice({
+      purchaseCost,
+      fees: extraCost,
+      targetMarginPct,
+    });
+
+    const markdown = calcRecommendedMarkdownPrice({
+      ageDays,
+      baseTargetPrice,
+    });
+
+    const computedRecommendedPrice = Number(it.recommendedPrice ?? markdown.price);
+    const needsReviewByAge =
+      it.status === "LISTED" && ageDays >= PRICING_AGE_THRESHOLDS.markdown45;
+
+    return {
+      sku: it.sku,
+      titleOverride: it.titleOverride,
+      status: it.status,
+      purchaseCost,
+      extraCost,
+      breakEvenPrice,
+      targetMarginPct,
+      recommendedPrice: computedRecommendedPrice,
+      markdownPct: markdown.markdownPct,
+      pricingAlert: needsReviewByAge,
+      pricingLastEvaluatedAt: it.lastPricingEvalAt
+        ? it.lastPricingEvalAt.toISOString()
+        : null,
+      condition: it.condition ?? "",
+      purchasedAt: it.purchasedAt ? it.purchasedAt.toISOString() : null,
+      purchasedFrom: it.purchasedFrom ?? "",
+      purchaseRef: it.purchaseRef ?? "",
+      purchaseUrl: it.purchaseUrl ?? "",
+      brand: it.brand ?? "",
+      size: it.size ?? "",
+      createdAt: it.createdAt.toISOString(),
+      location: it.location ? { code: it.location.code } : null,
+    };
+  });
+
+  const platformOptionsRaw = await prisma.listing.findMany({
+    distinct: ["platform"],
+    select: { platform: true },
+    orderBy: { platform: "asc" },
+  });
+  const platformOptions = platformOptionsRaw.map((x) => x.platform);
 
   const statuses = ["", "IN_STOCK", "LISTED", "SOLD", "RETURNED", "WRITTEN_OFF"];
 
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (statusParam && !inStock) qsBase.set("status", statusParam);
+  if (platform) qsBase.set("platform", platform);
+  if (listedOnAny) qsBase.set("listed_on_any", "1");
+  if (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) {
+    qsBase.set("listed_on_count_min", String(listedOnCountMin));
+  }
+  if (safeAgeMin) qsBase.set("age_min", String(safeAgeMin));
+  if (needsPriceReview) qsBase.set("needs_price_review", "1");
 
   const inStockOnHref = `/inventory?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
@@ -101,12 +221,14 @@ export default async function InventoryPage({ searchParams }: Props) {
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Inventory</h1>
           <div className="muted" style={{ marginTop: 4 }}>
             {itemsPlain.length} item(s)
-            {(q || status) && (
+            {(q || status || safeAgeMin || needsPriceReview) && (
               <>
                 {" "}
                 • Filtered
                 {q ? ` by “${q}”` : ""}
                 {status ? ` • Status: ${formatStatus(status)}` : ""}
+                {safeAgeMin ? ` • Age: ${safeAgeMin}+ days` : ""}
+                {needsPriceReview ? " • Needs price review" : ""}
               </>
             )}
           </div>
@@ -123,7 +245,6 @@ export default async function InventoryPage({ searchParams }: Props) {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
         <form
           action="/inventory"
@@ -135,7 +256,7 @@ export default async function InventoryPage({ searchParams }: Props) {
             alignItems: "end",
           }}
         >
-          <label style={{ flex: "1 1 320px" }}>
+          <label style={{ flex: "1 1 280px" }}>
             Search (SKU, title, location, purchase info)
             <input
               name="q"
@@ -164,13 +285,87 @@ export default async function InventoryPage({ searchParams }: Props) {
             </select>
           </label>
 
+          <label style={{ width: 220 }}>
+            Platform
+            <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
+              <option value="">Any</option>
+              {platformOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ width: 180 }}>
+            Listed on any
+            <select
+              name="listed_on_any"
+              defaultValue={listedOnAny ? "1" : "0"}
+              style={{ width: "100%" }}
+            >
+              <option value="0">No filter</option>
+              <option value="1">Yes</option>
+            </select>
+          </label>
+
+          <label style={{ width: 220 }}>
+            Min listing count
+            <input
+              type="number"
+              min={0}
+              name="listed_on_count_min"
+              defaultValue={
+                Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
+                  ? listedOnCountMin
+                  : ""
+              }
+              placeholder="e.g. 2"
+              style={{ width: "100%" }}
+            />
+          <label style={{ width: 140 }}>
+            Min age (days)
+            <input
+              name="age_min"
+              type="number"
+              min={1}
+              defaultValue={safeAgeMin ?? ""}
+              placeholder="45"
+              style={{ width: "100%" }}
+            />
+          </label>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              paddingBottom: 8,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              name="needs_price_review"
+              value="1"
+              defaultChecked={needsPriceReview}
+            />
+            Needs price review
+          </label>
+
           {inStock && <input type="hidden" name="in_stock" value="1" />}
 
           <button className="btn" type="submit">
             Apply
           </button>
 
-          {(q || statusParam || inStock) && (
+          {(q ||
+            statusParam ||
+            inStock ||
+            platform ||
+            listedOnAny ||
+            listedOnCountMin) && (
+          {(q || statusParam || inStock || safeAgeMin || needsPriceReview) && (
             <Link className="btn" href="/inventory">
               Clear
             </Link>
@@ -178,7 +373,6 @@ export default async function InventoryPage({ searchParams }: Props) {
         </form>
       </div>
 
-      {/* Bulk-select table */}
       <InventoryTable items={itemsPlain} />
     </div>
   );

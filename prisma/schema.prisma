@@ -15,6 +15,13 @@ enum StockStatus {
   WRITTEN_OFF
 }
 
+enum ListingStatus {
+  ACTIVE
+  PAUSED
+  SOLD
+  ENDED
+}
+
 model Location {
   id        String   @id @default(uuid())
   code      String   @unique
@@ -81,7 +88,7 @@ model StockUnit {
   size          String?
 
   productId String?
-  product   Product?  @relation(fields: [productId], references: [id])
+  product   Product? @relation(fields: [productId], references: [id])
 
   purchaseId String?
   purchase   Purchase? @relation(fields: [purchaseId], references: [id])
@@ -90,23 +97,47 @@ model StockUnit {
   location   Location? @relation(fields: [locationId], references: [id])
 
   saleLine SaleLine?
+  listings Listing[]
 
   archived   Boolean   @default(false)
   archivedAt DateTime?
+
+  targetMarginPct   Decimal?
+  recommendedPrice  Decimal?
+  lastPricingEvalAt DateTime?
+}
+
+model Listing {
+  id          String        @id @default(uuid())
+  stockUnitId String
+  platform    String
+  listingId   String
+  url         String?
+  askPrice    Decimal       @default(0)
+  status      ListingStatus @default(ACTIVE)
+  listedAt    DateTime      @default(now())
+  endedAt     DateTime?
+  createdAt   DateTime      @default(now())
+
+  stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Cascade)
+
+  @@index([stockUnitId])
+  @@index([platform])
+  @@unique([platform, listingId])
 }
 
 model Sale {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   platform        String
-  saleDate        DateTime @default(now())
+  saleDate        DateTime  @default(now())
   orderRef        String?
-  shippingCharged Decimal  @default(0)
-  platformFees    Decimal  @default(0)
-  shippingCost    Decimal  @default(0)
-  otherCosts      Decimal  @default(0)
+  shippingCharged Decimal   @default(0)
+  platformFees    Decimal   @default(0)
+  shippingCost    Decimal   @default(0)
+  otherCosts      Decimal   @default(0)
   notes           String?
-  createdAt       DateTime @default(now())
-  archived        Boolean  @default(false)
+  createdAt       DateTime  @default(now())
+  archived        Boolean   @default(false)
   archivedAt      DateTime?
 
   lines SaleLine[]
