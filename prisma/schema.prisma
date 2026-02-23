@@ -41,6 +41,20 @@ model Product {
   createdAt DateTime @default(now())
 
   stockUnits StockUnit[]
+  watch      ProductWatch?
+}
+
+model ProductWatch {
+  id             String   @id @default(uuid())
+  productId      String   @unique
+  active         Boolean  @default(true)
+  targetBuyPrice Decimal?
+  notes          String?
+  priority       Int      @default(3)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Purchase {

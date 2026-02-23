@@ -9,6 +9,7 @@ const links = [
   { href: "/inventory", label: "Inventory" },
   { href: "/sales", label: "Sales" },
   { href: "/reports", label: "Reports" },
+  { href: "/watchlist", label: "Watchlist" },
 ];
 
 function AccountIcon({ size = 22 }: { size?: number }) {

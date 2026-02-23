@@ -107,6 +107,19 @@ export default function NewInventoryPage() {
     fetchSku();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const title = (params.get("title") ?? "").trim();
+    const brandFromQuery = (params.get("brand") ?? "").trim();
+    const targetBuy = (params.get("targetBuy") ?? "").trim();
+
+    if (title && !titleOverride) setTitleOverride(title);
+    if (brandFromQuery && !brand) setBrand(brandFromQuery);
+    if (targetBuy && Number.isFinite(Number(targetBuy)) && Number(targetBuy) > 0) {
+      setPurchaseCost(Number(targetBuy).toFixed(2));
+    }
+  }, [titleOverride, brand]);
+
   // Load locations for dropdown
   useEffect(() => {
     async function loadLocations() {
