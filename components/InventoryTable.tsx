@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatStatus } from "@/lib/status";
+import { moneyGBP, isoDateTime } from "@/lib/format";
 
 type Item = {
   sku: string;
@@ -10,7 +11,7 @@ type Item = {
   status: string;
 
   purchaseCost: number;
-  createdAt: string; // ISO string
+  createdAt: string;
   location: { code: string } | null;
 
   // ✅ new fields (optional)
@@ -69,10 +70,6 @@ export default function InventoryTable({ items }: { items: Item[] }) {
     } finally {
       setBusy(false);
     }
-  }
-
-  function formatDate(iso: string) {
-    return new Date(iso).toISOString().slice(0, 16).replace("T", " ");
   }
 
   return (
@@ -191,9 +188,9 @@ export default function InventoryTable({ items }: { items: Item[] }) {
                   {it.location?.code ?? <span className="muted">—</span>}
                 </td>
 
-                <td className="td">£{it.purchaseCost.toFixed(2)}</td>
+                <td className="td">{moneyGBP(it.purchaseCost)}</td>
 
-                <td className="td">{formatDate(it.createdAt)}</td>
+                <td className="td">{isoDateTime(it.createdAt)}</td>
 
                 <td
                   className="td"

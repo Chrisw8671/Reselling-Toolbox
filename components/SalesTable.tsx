@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { isoDate, moneyGBP } from "@/lib/format";
 
 type SaleRow = {
   id: string;
@@ -13,11 +14,6 @@ type SaleRow = {
   profit: number;
   orderRef: string;
 };
-
-function formatDate(iso: string) {
-  // deterministic (no hydration warnings)
-  return new Date(iso).toISOString().slice(0, 10);
-}
 
 export default function SalesTable({ rows }: { rows: SaleRow[] }) {
   const router = useRouter();
@@ -164,15 +160,15 @@ export default function SalesTable({ rows }: { rows: SaleRow[] }) {
                   />
                 </td>
 
-                <td className="td">{formatDate(r.saleDate)}</td>
+                <td className="td">{isoDate(r.saleDate)}</td>
                 <td className="td">{r.platform}</td>
                 <td className="td">{r.itemCount}</td>
-                <td className="td">£{r.revenue.toFixed(2)}</td>
-                <td className="td">£{r.costs.toFixed(2)}</td>
+                <td className="td">{moneyGBP(r.revenue)}</td>
+                <td className="td">{moneyGBP(r.costs)}</td>
 
                 <td className="td">
                   <span className={`badge ${r.profit >= 0 ? "profitPos" : "profitNeg"}`}>
-                    £{r.profit.toFixed(2)}
+                    {moneyGBP(r.profit)}
                   </span>
                 </td>
 

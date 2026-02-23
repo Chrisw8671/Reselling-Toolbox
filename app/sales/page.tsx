@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import SalesTable from "@/components/SalesTable";
+import { moneyGBP, startOfMonth } from "@/lib/format";
+import { Prisma } from "@prisma/client";
 
 type Props = {
   searchParams?: Promise<{
@@ -10,19 +12,13 @@ type Props = {
   }>;
 };
 
-function startOfMonth(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
 export default async function SalesPage({ searchParams }: Props) {
   const sp = (await searchParams) ?? {};
   const q = (sp.q ?? "").trim();
   const platform = (sp.platform ?? "").trim();
   const thisMonth = (sp.this_month ?? "") === "1";
 
-  const where: any = {
-    archived: false, // ✅ only unarchived
-  };
+const where: Prisma.SaleWhereInput = { archived: false };
 
   if (platform) where.platform = platform;
 
@@ -110,7 +106,9 @@ export default async function SalesPage({ searchParams }: Props) {
     this_month: "1",
   }).toString()}`;
 
-  const thisMonthOffHref = qsBase.toString() ? `/sales?${qsBase.toString()}` : "/sales";
+  const thisMonthOffHref = qsBase.toString()
+    ? `/sales?${qsBase.toString()}`
+    : "/sales";
 
   return (
     <div className="container">
@@ -118,7 +116,7 @@ export default async function SalesPage({ searchParams }: Props) {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Sales</h1>
           <div className="muted" style={{ marginTop: 4 }}>
-            {rows.length} sale(s) • Total profit shown: £{totalProfit.toFixed(2)}
+            {rows.length} sale(s) • Total profit shown: {moneyGBP(totalProfit)}
             {(q || platform || thisMonth) && (
               <>
                 {" "}
