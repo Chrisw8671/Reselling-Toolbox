@@ -33,6 +33,12 @@ export default async function ReportsPage() {
         platformFees: true,
         shippingCost: true,
         otherCosts: true,
+        returnCases: {
+          select: {
+            refundAmount: true,
+            returnShippingCost: true,
+          },
+        },
         lines: {
           select: {
             salePrice: true,
@@ -48,6 +54,12 @@ export default async function ReportsPage() {
         platformFees: true,
         shippingCost: true,
         otherCosts: true,
+        returnCases: {
+          select: {
+            refundAmount: true,
+            returnShippingCost: true,
+          },
+        },
         lines: {
           select: {
             salePrice: true,
@@ -79,7 +91,9 @@ export default async function ReportsPage() {
       purchaseTotal +
       Number(s.platformFees) +
       Number(s.shippingCost) +
-      Number(s.otherCosts);
+      Number(s.otherCosts) +
+      s.returnCases.reduce((sum, r) => sum + Number(r.refundAmount), 0) +
+      s.returnCases.reduce((sum, r) => sum + Number(r.returnShippingCost), 0);
 
     return revenue - costs;
   }
@@ -96,9 +110,23 @@ export default async function ReportsPage() {
       purchaseTotal +
       Number(s.platformFees) +
       Number(s.shippingCost) +
-      Number(s.otherCosts);
+      Number(s.otherCosts) +
+      s.returnCases.reduce((a, r) => a + Number(r.refundAmount), 0) +
+      s.returnCases.reduce((a, r) => a + Number(r.returnShippingCost), 0);
     return sum + (revenue - costs);
   }, 0);
+
+  const totalReturnCases = sales.reduce((sum, s) => sum + s.returnCases.length, 0);
+  const returnRate = sales.length === 0 ? 0 : (totalReturnCases / sales.length) * 100;
+  const totalReturnCost = sales.reduce(
+    (sum, s) =>
+      sum +
+      s.returnCases.reduce(
+        (inner, rc) => inner + Number(rc.refundAmount) + Number(rc.returnShippingCost),
+        0,
+      ),
+    0,
+  );
 
   const inventoryValue = stockUnits
     .filter((x) => x.status !== "SOLD")
@@ -139,6 +167,38 @@ export default async function ReportsPage() {
   const profitByPlatform = Array.from(platformMap.entries())
     .map(([platform, profit]) => ({ platform, profit: Number(profit.toFixed(2)) }))
     .sort((a, b) => b.profit - a.profit);
+
+  const platformSalesMap = new Map<string, number>();
+  const returnSalesPlatformMap = new Map<string, number>();
+  const returnCostPlatformMap = new Map<string, number>();
+  for (const s of sales) {
+    const p = s.platform || "Unknown";
+    platformSalesMap.set(p, (platformSalesMap.get(p) ?? 0) + 1);
+    if (s.returnCases.length > 0) {
+      returnSalesPlatformMap.set(p, (returnSalesPlatformMap.get(p) ?? 0) + 1);
+    }
+    const returnCostForSale = s.returnCases.reduce(
+      (sum, rc) => sum + Number(rc.refundAmount) + Number(rc.returnShippingCost),
+      0,
+    );
+    returnCostPlatformMap.set(p, (returnCostPlatformMap.get(p) ?? 0) + returnCostForSale);
+  }
+  const marginImpactByPlatform = Array.from(platformSalesMap.entries())
+    .map(([platform, saleCount]) => {
+      const returnedSalesCount = returnSalesPlatformMap.get(platform) ?? 0;
+      const returnCost = returnCostPlatformMap.get(platform) ?? 0;
+      const platformProfit = platformMap.get(platform) ?? 0;
+      const returnRatePct = saleCount === 0 ? 0 : (returnedSalesCount / saleCount) * 100;
+      const marginImpactPct =
+        platformProfit === 0 ? 0 : (returnCost / Math.abs(platformProfit)) * 100;
+      return {
+        platform,
+        returnRatePct: Number(returnRatePct.toFixed(1)),
+        returnCost: Number(returnCost.toFixed(2)),
+        marginImpactPct: Number(marginImpactPct.toFixed(1)),
+      };
+    })
+    .sort((a, b) => b.returnCost - a.returnCost);
 
   // C) Inventory status pie
   const statusMap = new Map<string, number>();
@@ -216,6 +276,51 @@ export default async function ReportsPage() {
           <div className="muted">Dead Stock (90+ days)</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{deadStock}</div>
         </div>
+
+        <div className="tableWrap" style={{ padding: 16 }}>
+          <div className="muted">Return Rate (per sale)</div>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>{returnRate.toFixed(1)}%</div>
+        </div>
+
+        <div className="tableWrap" style={{ padding: 16 }}>
+          <div className="muted">Total Return Cost</div>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>
+            £{totalReturnCost.toFixed(2)}
+          </div>
+        </div>
+      </div>
+
+      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+          Margin impact by platform
+        </div>
+        <table className="table">
+          <thead className="thead">
+            <tr>
+              <th className="th">Platform</th>
+              <th className="th">Return Rate</th>
+              <th className="th">Return Cost</th>
+              <th className="th">Margin Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            {marginImpactByPlatform.map((r) => (
+              <tr className="tr" key={r.platform}>
+                <td className="td">{r.platform}</td>
+                <td className="td">{r.returnRatePct.toFixed(1)}%</td>
+                <td className="td">£{r.returnCost.toFixed(2)}</td>
+                <td className="td">{r.marginImpactPct.toFixed(1)}%</td>
+              </tr>
+            ))}
+            {marginImpactByPlatform.length === 0 && (
+              <tr className="tr">
+                <td className="td" colSpan={4}>
+                  No platform data yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Charts */}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import SaleArchiveButton from "@/components/SaleArchiveButton";
+import ReturnManager from "@/components/ReturnManager";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -21,11 +22,25 @@ export default async function SaleDetailPage({ params }: Props) {
       otherCosts: true,
       notes: true,
       archivedAt: true, // ✅ added
+      returnCases: {
+        select: {
+          id: true,
+          stockUnitId: true,
+          reason: true,
+          openedAt: true,
+          closedAt: true,
+          refundAmount: true,
+          returnShippingCost: true,
+          restockable: true,
+        },
+        orderBy: { openedAt: "desc" },
+      },
       lines: {
         select: {
           salePrice: true,
           stockUnit: {
             select: {
+              id: true,
               sku: true,
               titleOverride: true,
               purchaseCost: true,
@@ -59,9 +74,20 @@ export default async function SaleDetailPage({ params }: Props) {
   const platformFees = Number(sale.platformFees);
   const shippingCost = Number(sale.shippingCost);
   const otherCosts = Number(sale.otherCosts);
+  const refundAmount = sale.returnCases.reduce((s, r) => s + Number(r.refundAmount), 0);
+  const returnShippingCost = sale.returnCases.reduce(
+    (s, r) => s + Number(r.returnShippingCost),
+    0,
+  );
 
   const revenue = itemsTotal + shippingCharged;
-  const costs = purchaseTotal + platformFees + shippingCost + otherCosts;
+  const costs =
+    purchaseTotal +
+    platformFees +
+    shippingCost +
+    otherCosts +
+    refundAmount +
+    returnShippingCost;
   const profit = revenue - costs;
 
   return (
@@ -87,6 +113,12 @@ export default async function SaleDetailPage({ params }: Props) {
       </div>
 
       {/* Summary */}
+      <ReturnManager
+        saleId={sale.id}
+        lines={sale.lines}
+        existingCases={sale.returnCases}
+      />
+
       <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
         <div
           style={{
@@ -126,6 +158,12 @@ export default async function SaleDetailPage({ params }: Props) {
           </div>
           <div>
             <b>Other costs:</b> £{otherCosts.toFixed(2)}
+          </div>
+          <div>
+            <b>Refunds:</b> £{refundAmount.toFixed(2)}
+          </div>
+          <div>
+            <b>Return shipping:</b> £{returnShippingCost.toFixed(2)}
           </div>
         </div>
 
