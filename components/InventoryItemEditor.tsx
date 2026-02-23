@@ -26,6 +26,7 @@ type LocationOption = { code: string; label: string };
 
 type Item = {
   sku: string;
+  stockUnitId: string;
   titleOverride: string;
   status: string;
   condition: string;
@@ -38,7 +39,31 @@ type Item = {
 
   archived: boolean;
   createdAt: string; // display
+  listings: ListingRow[];
 };
+
+type ListingRow = {
+  id: string;
+  platform: string;
+  listingId: string;
+  url: string;
+  askPrice: number;
+  status: string;
+  listedAt: string;
+  endedAt: string;
+};
+
+const LISTING_STATUSES = ["ACTIVE", "PAUSED", "SOLD", "ENDED"];
+
+function badgeColor(platform: string) {
+  const normalized = platform.trim().toLowerCase();
+  if (normalized === "ebay") return "#facc15";
+  if (normalized === "vinted") return "#5eead4";
+  if (normalized === "depop") return "#f9a8d4";
+  if (normalized === "etsy") return "#fdba74";
+  if (normalized === "facebook") return "#93c5fd";
+  return "#c4b5fd";
+}
 
 export default function InventoryItemEditor({ item }: { item: Item }) {
   const router = useRouter();
@@ -62,6 +87,16 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
   const [locationChoice, setLocationChoice] = useState<string>(""); // "" | "__custom__" | code
   const [locationCustom, setLocationCustom] = useState<string>("");
   const [locationCode, setLocationCode] = useState(item.locationCode);
+  const [listings, setListings] = useState<ListingRow[]>(item.listings);
+  const [listingBusyId, setListingBusyId] = useState<string>("");
+
+  const [newPlatform, setNewPlatform] = useState("");
+  const [newListingId, setNewListingId] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [newAskPrice, setNewAskPrice] = useState("0");
+  const [newStatus, setNewStatus] = useState("ACTIVE");
+  const [newListedAt, setNewListedAt] = useState(new Date().toISOString().slice(0, 10));
+  const [newEndedAt, setNewEndedAt] = useState("");
 
   // Load locations
   useEffect(() => {
@@ -109,9 +144,105 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       setPurchasedAt(item.purchasedAt);
       setArchived(Boolean(item.archived));
       setLocationCode(item.locationCode);
+      setListings(item.listings);
       setMsg("");
     }
   }, [isEditing, item]);
+
+  async function createListing() {
+    if (!newPlatform.trim() || !newListingId.trim()) {
+      alert("Platform and Listing ID are required.");
+      return;
+    }
+
+    const askPriceNumber = Number(newAskPrice);
+    if (!Number.isFinite(askPriceNumber) || askPriceNumber < 0) {
+      alert("Ask price must be a number >= 0.");
+      return;
+    }
+
+    setListingBusyId("new");
+    try {
+      const res = await fetch("/api/listings/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stockUnitId: item.stockUnitId,
+          platform: newPlatform,
+          listingId: newListingId,
+          url: newUrl,
+          askPrice: askPriceNumber,
+          status: newStatus,
+          listedAt: newListedAt,
+          endedAt: newEndedAt || null,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error ?? "Failed to create listing");
+        return;
+      }
+
+      router.refresh();
+      setNewPlatform("");
+      setNewListingId("");
+      setNewUrl("");
+      setNewAskPrice("0");
+      setNewStatus("ACTIVE");
+      setNewEndedAt("");
+    } finally {
+      setListingBusyId("");
+    }
+  }
+
+  async function updateListing(listing: ListingRow) {
+    setListingBusyId(listing.id);
+    try {
+      const res = await fetch("/api/listings/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...listing,
+          askPrice: Number(listing.askPrice),
+          endedAt: listing.endedAt || null,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error ?? "Failed to update listing");
+        return;
+      }
+
+      router.refresh();
+    } finally {
+      setListingBusyId("");
+    }
+  }
+
+  async function deleteListing(id: string) {
+    if (!confirm("Delete this listing?")) return;
+
+    setListingBusyId(id);
+    try {
+      const res = await fetch("/api/listings/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.error ?? "Failed to delete listing");
+        return;
+      }
+
+      router.refresh();
+    } finally {
+      setListingBusyId("");
+    }
+  }
 
   const hasChanges = useMemo(() => {
     return (
@@ -402,6 +533,237 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           disabled={!isEditing}
         />
       </label>
+
+      <div style={{ marginTop: 20 }}>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>Listings</div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "2fr 1.4fr 2fr 1fr 1.2fr 1.2fr 1.2fr auto",
+            gap: 8,
+            alignItems: "end",
+            marginBottom: 12,
+          }}
+        >
+          <label>
+            Platform
+            <input value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} />
+          </label>
+          <label>
+            Listing ID
+            <input
+              value={newListingId}
+              onChange={(e) => setNewListingId(e.target.value)}
+            />
+          </label>
+          <label>
+            URL
+            <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
+          </label>
+          <label>
+            Ask £
+            <input
+              type="number"
+              step="0.01"
+              value={newAskPrice}
+              onChange={(e) => setNewAskPrice(e.target.value)}
+            />
+          </label>
+          <label>
+            Status
+            <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
+              {LISTING_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Listed at
+            <input
+              type="date"
+              value={newListedAt}
+              onChange={(e) => setNewListedAt(e.target.value)}
+            />
+          </label>
+          <label>
+            Ended at
+            <input
+              type="date"
+              value={newEndedAt}
+              onChange={(e) => setNewEndedAt(e.target.value)}
+            />
+          </label>
+
+          <button className="btn" type="button" onClick={createListing}>
+            {listingBusyId === "new" ? "Adding..." : "Add"}
+          </button>
+        </div>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          {listings.length === 0 && <div className="muted">No listings yet.</div>}
+
+          {listings.map((listing) => (
+            <div
+              key={listing.id}
+              className="tableWrap"
+              style={{ padding: 10, display: "grid", gap: 8 }}
+            >
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span
+                  style={{
+                    background: badgeColor(listing.platform),
+                    borderRadius: 999,
+                    padding: "2px 10px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#111827",
+                  }}
+                >
+                  {listing.platform || "Platform"}
+                </span>
+                <span className="muted">#{listing.listingId}</span>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 1.4fr 2fr 1fr 1.2fr 1.2fr 1.2fr auto",
+                  gap: 8,
+                  alignItems: "end",
+                }}
+              >
+                <label>
+                  Platform
+                  <input
+                    value={listing.platform}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setListings((prev) =>
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, platform: next } : x,
+                        ),
+                      );
+                    }}
+                  />
+                </label>
+                <label>
+                  Listing ID
+                  <input
+                    value={listing.listingId}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setListings((prev) =>
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, listingId: next } : x,
+                        ),
+                      );
+                    }}
+                  />
+                </label>
+                <label>
+                  URL
+                  <input
+                    value={listing.url}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setListings((prev) =>
+                        prev.map((x) => (x.id === listing.id ? { ...x, url: next } : x)),
+                      );
+                    }}
+                  />
+                </label>
+                <label>
+                  Ask £
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={listing.askPrice}
+                    onChange={(e) => {
+                      const next = Number(e.target.value || 0);
+                      setListings((prev) =>
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, askPrice: next } : x,
+                        ),
+                      );
+                    }}
+                  />
+                </label>
+                <label>
+                  Status
+                  <select
+                    value={listing.status}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setListings((prev) =>
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, status: next } : x,
+                        ),
+                      );
+                    }}
+                  >
+                    {LISTING_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Listed at
+                  <input
+                    type="date"
+                    value={listing.listedAt}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setListings((prev) =>
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, listedAt: next } : x,
+                        ),
+                      );
+                    }}
+                  />
+                </label>
+                <label>
+                  Ended at
+                  <input
+                    type="date"
+                    value={listing.endedAt}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setListings((prev) =>
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, endedAt: next } : x,
+                        ),
+                      );
+                    }}
+                  />
+                </label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => updateListing(listing)}
+                    disabled={listingBusyId === listing.id}
+                  >
+                    Save
+                  </button>
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => deleteListing(listing.id)}
+                    disabled={listingBusyId === listing.id}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
