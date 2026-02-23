@@ -8,6 +8,9 @@ type Props = {
     q?: string;
     status?: string;
     in_stock?: string;
+    platform?: string;
+    listed_on_any?: string;
+    listed_on_count_min?: string;
   }>;
 };
 
@@ -16,12 +19,29 @@ export default async function InventoryPage({ searchParams }: Props) {
   const q = (sp.q ?? "").trim();
   const statusParam = (sp.status ?? "").trim();
   const inStock = (sp.in_stock ?? "") === "1";
+  const platform = (sp.platform ?? "").trim();
+  const listedOnAny = (sp.listed_on_any ?? "") === "1";
+  const listedOnCountMin = Number(sp.listed_on_count_min ?? "");
 
   const status = inStock ? "IN_STOCK" : statusParam;
 
   const where: any = { archived: false };
 
   if (status) where.status = status;
+
+  if (
+    platform ||
+    listedOnAny ||
+    (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0)
+  ) {
+    where.listings = {
+      some: platform
+        ? {
+            platform: { equals: platform, mode: "insensitive" },
+          }
+        : {},
+    };
+  }
 
   if (q) {
     where.OR = [
@@ -58,11 +78,19 @@ export default async function InventoryPage({ searchParams }: Props) {
       size: true,
       createdAt: true,
       location: { select: { code: true } },
+      listings: {
+        select: { platform: true },
+      },
     },
   });
 
+  const filteredByCount =
+    Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
+      ? items.filter((it) => it.listings.length >= listedOnCountMin)
+      : items;
+
   // Convert to plain objects for Client Component
-  const itemsPlain = items.map((it) => ({
+  const itemsPlain = filteredByCount.map((it) => ({
     sku: it.sku,
     titleOverride: it.titleOverride,
     status: it.status,
@@ -79,11 +107,23 @@ export default async function InventoryPage({ searchParams }: Props) {
     location: it.location ? { code: it.location.code } : null,
   }));
 
+  const platformOptionsRaw = await prisma.listing.findMany({
+    distinct: ["platform"],
+    select: { platform: true },
+    orderBy: { platform: "asc" },
+  });
+  const platformOptions = platformOptionsRaw.map((x) => x.platform);
+
   const statuses = ["", "IN_STOCK", "LISTED", "SOLD", "RETURNED", "WRITTEN_OFF"];
 
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (statusParam && !inStock) qsBase.set("status", statusParam);
+  if (platform) qsBase.set("platform", platform);
+  if (listedOnAny) qsBase.set("listed_on_any", "1");
+  if (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) {
+    qsBase.set("listed_on_count_min", String(listedOnCountMin));
+  }
 
   const inStockOnHref = `/inventory?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
@@ -164,13 +204,58 @@ export default async function InventoryPage({ searchParams }: Props) {
             </select>
           </label>
 
+          <label style={{ width: 220 }}>
+            Platform
+            <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
+              <option value="">Any</option>
+              {platformOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label style={{ width: 180 }}>
+            Listed on any
+            <select
+              name="listed_on_any"
+              defaultValue={listedOnAny ? "1" : "0"}
+              style={{ width: "100%" }}
+            >
+              <option value="0">No filter</option>
+              <option value="1">Yes</option>
+            </select>
+          </label>
+
+          <label style={{ width: 220 }}>
+            Min listing count
+            <input
+              type="number"
+              min={0}
+              name="listed_on_count_min"
+              defaultValue={
+                Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
+                  ? listedOnCountMin
+                  : ""
+              }
+              placeholder="e.g. 2"
+              style={{ width: "100%" }}
+            />
+          </label>
+
           {inStock && <input type="hidden" name="in_stock" value="1" />}
 
           <button className="btn" type="submit">
             Apply
           </button>
 
-          {(q || statusParam || inStock) && (
+          {(q ||
+            statusParam ||
+            inStock ||
+            platform ||
+            listedOnAny ||
+            listedOnCountMin) && (
             <Link className="btn" href="/inventory">
               Clear
             </Link>

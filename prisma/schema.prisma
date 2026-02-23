@@ -15,6 +15,13 @@ enum StockStatus {
   WRITTEN_OFF
 }
 
+enum ListingStatus {
+  ACTIVE
+  PAUSED
+  SOLD
+  ENDED
+}
+
 model Location {
   id        String   @id @default(uuid())
   code      String   @unique
@@ -76,9 +83,29 @@ model StockUnit {
   location   Location? @relation(fields: [locationId], references: [id])
 
   saleLine SaleLine?
+  listings Listing[]
 
   archived   Boolean   @default(false)
   archivedAt DateTime?
+}
+
+model Listing {
+  id          String        @id @default(uuid())
+  stockUnitId String
+  platform    String
+  listingId   String
+  url         String?
+  askPrice    Decimal       @default(0)
+  status      ListingStatus @default(ACTIVE)
+  listedAt    DateTime      @default(now())
+  endedAt     DateTime?
+  createdAt   DateTime      @default(now())
+
+  stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Cascade)
+
+  @@index([stockUnitId])
+  @@index([platform])
+  @@unique([platform, listingId])
 }
 
 model Sale {
