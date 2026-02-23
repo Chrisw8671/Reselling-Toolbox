@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import SaleArchiveButton from "@/components/SaleArchiveButton";
+import ReturnManager from "@/components/ReturnManager";
 import SaleFulfillmentEditor from "@/components/SaleFulfillmentEditor";
 import { FULFILLMENT_LABEL, FulfillmentStatus } from "@/lib/fulfillment";
 
@@ -29,6 +30,20 @@ export default async function SaleDetailPage({ params }: Props) {
       shippingCost: true,
       otherCosts: true,
       notes: true,
+      archivedAt: true, // ✅ added
+      returnCases: {
+        select: {
+          id: true,
+          stockUnitId: true,
+          reason: true,
+          openedAt: true,
+          closedAt: true,
+          refundAmount: true,
+          returnShippingCost: true,
+          restockable: true,
+        },
+        orderBy: { openedAt: "desc" },
+      },
       archivedAt: true,
       fulfillmentStatus: true,
       trackingNumber: true,
@@ -40,6 +55,7 @@ export default async function SaleDetailPage({ params }: Props) {
           salePrice: true,
           stockUnit: {
             select: {
+              id: true,
               sku: true,
               titleOverride: true,
               purchaseCost: true,
@@ -73,9 +89,20 @@ export default async function SaleDetailPage({ params }: Props) {
   const platformFees = Number(sale.platformFees);
   const shippingCost = Number(sale.shippingCost);
   const otherCosts = Number(sale.otherCosts);
+  const refundAmount = sale.returnCases.reduce((s, r) => s + Number(r.refundAmount), 0);
+  const returnShippingCost = sale.returnCases.reduce(
+    (s, r) => s + Number(r.returnShippingCost),
+    0,
+  );
 
   const revenue = itemsTotal + shippingCharged;
-  const costs = purchaseTotal + platformFees + shippingCost + otherCosts;
+  const costs =
+    purchaseTotal +
+    platformFees +
+    shippingCost +
+    otherCosts +
+    refundAmount +
+    returnShippingCost;
   const profit = revenue - costs;
 
   return (
@@ -100,6 +127,11 @@ export default async function SaleDetailPage({ params }: Props) {
         </div>
       </div>
 
+      {/* Summary */}
+      <ReturnManager
+        saleId={sale.id}
+        lines={sale.lines}
+        existingCases={sale.returnCases}
       <SaleFulfillmentEditor
         saleId={sale.id}
         fulfillmentStatus={sale.fulfillmentStatus as FulfillmentStatus}
@@ -148,6 +180,12 @@ export default async function SaleDetailPage({ params }: Props) {
           </div>
           <div>
             <b>Other costs:</b> £{otherCosts.toFixed(2)}
+          </div>
+          <div>
+            <b>Refunds:</b> £{refundAmount.toFixed(2)}
+          </div>
+          <div>
+            <b>Return shipping:</b> £{returnShippingCost.toFixed(2)}
           </div>
         </div>
 

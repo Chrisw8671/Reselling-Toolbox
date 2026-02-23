@@ -103,6 +103,7 @@ model StockUnit {
   location   Location? @relation(fields: [locationId], references: [id])
 
   saleLine SaleLine?
+  returnCases ReturnCase[]
   listings Listing[]
 
   archived   Boolean   @default(false)
@@ -152,6 +153,7 @@ model Sale {
   deliveredAt     DateTime?
 
   lines SaleLine[]
+  returnCases ReturnCase[]
 }
 
 model SaleLine {
@@ -163,4 +165,23 @@ model SaleLine {
 
   sale      Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
   stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Restrict)
+}
+
+model ReturnCase {
+  id                 String   @id @default(uuid())
+  saleId             String
+  stockUnitId        String
+  reason             String
+  openedAt           DateTime @default(now())
+  closedAt           DateTime?
+  refundAmount       Decimal  @default(0)
+  returnShippingCost Decimal  @default(0)
+  restockable        Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  sale      Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  stockUnit StockUnit @relation(fields: [stockUnitId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([stockUnitId])
 }
