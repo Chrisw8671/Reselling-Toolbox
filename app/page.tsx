@@ -300,6 +300,9 @@ export default async function HomePage() {
           <Link className="btn" href="/locations">
             Manage locations
           </Link>
+          <Link className="btn" href="/mobile">
+            On Mobile?
+          </Link>
         </div>
 
         <div className="muted" style={{ marginTop: 12 }}>
@@ -308,5 +311,6 @@ export default async function HomePage() {
         </div>
       </div>
     </div>
+    
   );
 }

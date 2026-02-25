@@ -48,50 +48,6 @@ function SettingsCogIcon({ size = 22 }: { size?: number }) {
   );
 }
 
-function HamburgerIcon({ open, size = 22 }: { open: boolean; size?: number }) {
-  // simple animated-ish swap between hamburger and X
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      {open ? (
-        <>
-          <path
-            d="M6 6L18 18"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M18 6L6 18"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </>
-      ) : (
-        <>
-          <path
-            d="M4 7H20"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M4 12H20"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M4 17H20"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </>
-      )}
-    </svg>
-  );
-}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -131,9 +87,6 @@ export default function Navbar() {
               priority
             />
           </Link>
-          <Link href="/" className="brandTitle">
-            Reselling Toolbox
-          </Link>
         </div>
 
         {/* Desktop nav */}
@@ -166,17 +119,6 @@ export default function Navbar() {
           >
             <SettingsCogIcon />
           </Link>
-
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            className="navIcon navHamburger"
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            onClick={() => setOpen((v) => !v)}
-          >
-            <HamburgerIcon open={open} />
-          </button>
         </div>
       </header>
 
@@ -191,47 +133,6 @@ export default function Navbar() {
           </Link>
         ))}
       </nav>
-
-      {/* Mobile dropdown */}
-      {open && (
-        <div className="mobileMenuOverlay" onClick={() => setOpen(false)}>
-          <div className="mobileMenu" onClick={(e) => e.stopPropagation()}>
-            <div className="mobileMenuTitle">Menu</div>
-
-            <div className="mobileMenuLinks">
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={isActive(l.href) ? "mobileLink active" : "mobileLink"}
-                >
-                  {l.label}
-                </Link>
-              ))}
-
-              <div className="mobileDivider" />
-
-              <Link
-                href="/settings"
-                className={
-                  pathname.startsWith("/settings") ? "mobileLink active" : "mobileLink"
-                }
-              >
-                Settings
-              </Link>
-
-              <Link
-                href="/account"
-                className={
-                  pathname.startsWith("/account") ? "mobileLink active" : "mobileLink"
-                }
-              >
-                Account
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
