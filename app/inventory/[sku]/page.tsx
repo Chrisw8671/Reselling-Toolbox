@@ -14,6 +14,7 @@ export default async function InventoryDetailPage({ params }: Props) {
   const item = await prisma.stockUnit.findUnique({
     where: { sku: decodedSku },
     select: {
+      id: true,
       sku: true,
       titleOverride: true,
       status: true,
@@ -26,11 +27,15 @@ export default async function InventoryDetailPage({ params }: Props) {
       purchaseCost: true,
       extraCost: true,
       purchasedAt: true,
+      targetMarginPct: true,
+      recommendedPrice: true,
+      lastPricingEvalAt: true,
+
       location: { select: { code: true } },
       notes: true,
       archived: true,
       createdAt: true,
-      id: true,
+
       listings: {
         orderBy: { createdAt: "desc" },
         select: {
@@ -49,25 +54,36 @@ export default async function InventoryDetailPage({ params }: Props) {
 
   if (!item) return notFound();
 
-  // Convert to plain JSON-safe values for client component
   const itemPlain = {
     sku: item.sku,
     stockUnitId: item.id,
+
     titleOverride: item.titleOverride ?? "",
     status: item.status,
     condition: item.condition ?? "",
+
     brand: item.brand ?? "",
     size: item.size ?? "",
     purchasedFrom: item.purchasedFrom ?? "",
     purchaseRef: item.purchaseRef ?? "",
     purchaseUrl: item.purchaseUrl ?? "",
+
     purchaseCost: Number(item.purchaseCost),
     extraCost: Number(item.extraCost),
+
     purchasedAt: item.purchasedAt.toISOString().slice(0, 10),
     locationCode: item.location?.code ?? "",
     notes: item.notes ?? "",
     archived: item.archived,
+
+    targetMarginPct: item.targetMarginPct !== null ? Number(item.targetMarginPct) : "",
+    recommendedPrice: item.recommendedPrice !== null ? Number(item.recommendedPrice) : "",
+    lastPricingEvalAt: item.lastPricingEvalAt
+      ? item.lastPricingEvalAt.toISOString().slice(0, 10)
+      : "",
+
     createdAt: item.createdAt.toISOString().slice(0, 16).replace("T", " "),
+
     listings: item.listings.map((listing) => ({
       id: listing.id,
       platform: listing.platform,
@@ -85,9 +101,7 @@ export default async function InventoryDetailPage({ params }: Props) {
       <div className="toolbar">
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Inventory Item</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
-            SKU: {itemPlain.sku}
-          </div>
+          <div className="muted" style={{ marginTop: 4 }}>SKU: {itemPlain.sku}</div>
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>

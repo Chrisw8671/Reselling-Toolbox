@@ -8,6 +8,12 @@ function parseOptionalDate(value: unknown) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function parseNumberOrZero(value: unknown) {
+  if (value === null || value === undefined || value === "") return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function parseOptionalNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return undefined;
   const parsed = Number(value);
@@ -19,6 +25,7 @@ function parseOptionalString(value: unknown) {
   const trimmed = value.trim();
   return trimmed ? trimmed : undefined;
 }
+
 function parseStockStatus(value: unknown) {
   const normalized = parseOptionalString(value);
   if (!normalized) return undefined;
@@ -30,30 +37,18 @@ function parseStockStatus(value: unknown) {
 
 export async function POST(req: Request) {
   const body = (await req.json()) as Record<string, unknown>;
-  const {
-    sku,
-    titleOverride,
-    condition,
-    status,
-    purchaseCost,
-    extraCost,
-    purchasedAt,
-    locationCode,
-    notes,
-  } = body;
 
-  const normalizedSku = parseOptionalString(sku);
+  const normalizedSku = parseOptionalString(body.sku);
   if (!normalizedSku) {
     return NextResponse.json({ error: "Missing SKU" }, { status: 400 });
   }
 
-  const parsedPurchaseDate = parseOptionalDate(purchasedAt);
-  if (!parsedPurchaseDate) {
-    return NextResponse.json({ error: "Invalid purchasedAt date" }, { status: 400 });
-  }
+  // allow purchasedAt to be omitted; schema defaults to now()
+  const parsedPurchaseDate = parseOptionalDate(body.purchasedAt);
 
+  // location
   let locationId: string | null = null;
-  const normalizedLocationCode = parseOptionalString(locationCode)?.toUpperCase() ?? null;
+  const normalizedLocationCode = parseOptionalString(body.locationCode)?.toUpperCase() ?? null;
 
   if (normalizedLocationCode) {
     const loc = await prisma.location.upsert({
@@ -65,17 +60,37 @@ export async function POST(req: Request) {
     locationId = loc.id;
   }
 
+  // Write all fields you want stored on StockUnit
   await prisma.stockUnit.create({
     data: {
       sku: normalizedSku,
-      titleOverride: parseOptionalString(titleOverride),
-      condition: parseOptionalString(condition),
-      status: parseStockStatus(status),
-      purchaseCost: parseOptionalNumber(purchaseCost),
-      extraCost: parseOptionalNumber(extraCost),
-      purchasedAt: parsedPurchaseDate,
+      titleOverride: parseOptionalString(body.titleOverride),
+      condition: parseOptionalString(body.condition),
+
+      // if missing/invalid, Prisma default IN_STOCK applies
+      status: parseStockStatus(body.status),
+
+      // required decimals: always write a number (default 0)
+      purchaseCost: parseNumberOrZero(body.purchaseCost),
+      extraCost: parseNumberOrZero(body.extraCost),
+
+      // optional date: only set when valid
+      ...(parsedPurchaseDate ? { purchasedAt: parsedPurchaseDate } : {}),
+
+      // new purchase fields
+      purchasedFrom: parseOptionalString(body.purchasedFrom),
+      purchaseRef: parseOptionalString(body.purchaseRef),
+      purchaseUrl: parseOptionalString(body.purchaseUrl),
+      brand: parseOptionalString(body.brand),
+      size: parseOptionalString(body.size),
+
+      // pricing fields (optional)
+      targetMarginPct: parseOptionalNumber(body.targetMarginPct),
+      recommendedPrice: parseOptionalNumber(body.recommendedPrice),
+      lastPricingEvalAt: parseOptionalDate(body.lastPricingEvalAt),
+
       locationId,
-      notes: parseOptionalString(notes),
+      notes: parseOptionalString(body.notes),
     },
   });
 

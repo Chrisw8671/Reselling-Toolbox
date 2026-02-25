@@ -4,7 +4,6 @@ import { StockStatus } from "@prisma/client";
 
 function parseOptionalNumber(value: unknown) {
   if (value === undefined || value === null || value === "") return undefined;
-
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
@@ -24,6 +23,7 @@ function parseOptionalString(value: unknown) {
   const trimmed = value.trim();
   return trimmed ? trimmed : undefined;
 }
+
 function parseStockStatus(value: unknown) {
   const normalized = parseOptionalString(value);
   if (!normalized) return undefined;
@@ -44,9 +44,21 @@ export async function POST(req: Request) {
     status,
     purchaseCost,
     extraCost,
-    purchasedAt, // "YYYY-MM-DD"
+    purchasedAt, // "YYYY-MM-DD" or ISO
     locationCode, // "BOX-01"
     archived, // boolean
+
+    // ✅ NEW FIELDS
+    purchasedFrom,
+    purchaseRef,
+    purchaseUrl,
+    brand,
+    size,
+
+    // ✅ PRICING FIELDS
+    targetMarginPct,
+    recommendedPrice,
+    lastPricingEvalAt,
   } = body;
 
   const normalizedSku = parseOptionalString(sku);
@@ -57,6 +69,14 @@ export async function POST(req: Request) {
   const parsedPurchaseDate = parseOptionalDate(purchasedAt);
   if (parsedPurchaseDate === null) {
     return NextResponse.json({ error: "Invalid purchasedAt date" }, { status: 400 });
+  }
+
+  const parsedPricingEvalAt = parseOptionalDate(lastPricingEvalAt);
+  if (parsedPricingEvalAt === null) {
+    return NextResponse.json(
+      { error: "Invalid lastPricingEvalAt date" },
+      { status: 400 },
+    );
   }
 
   // If provided, upsert location by code
@@ -83,17 +103,34 @@ export async function POST(req: Request) {
       condition: parseOptionalString(condition),
       notes: parseOptionalString(notes),
       status: parseStockStatus(status),
+
       purchaseCost: parseOptionalNumber(purchaseCost),
       extraCost: parseOptionalNumber(extraCost),
+
+      // only affects if provided; undefined is ignored by Prisma
       purchasedAt: parsedPurchaseDate,
+
       locationId,
-      archived: archived === undefined || archived === null ? undefined : archived,
+
+      archived: archived === undefined || archived === null ? undefined : Boolean(archived),
       archivedAt:
         archived === undefined || archived === null
           ? undefined
           : archived
             ? new Date()
             : null,
+
+      // ✅ NEW FIELDS (strings)
+      purchasedFrom: parseOptionalString(purchasedFrom),
+      purchaseRef: parseOptionalString(purchaseRef),
+      purchaseUrl: parseOptionalString(purchaseUrl),
+      brand: parseOptionalString(brand),
+      size: parseOptionalString(size),
+
+      // ✅ PRICING FIELDS
+      targetMarginPct: parseOptionalNumber(targetMarginPct),
+      recommendedPrice: parseOptionalNumber(recommendedPrice),
+      lastPricingEvalAt: parsedPricingEvalAt,
     },
   });
 

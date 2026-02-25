@@ -24,12 +24,35 @@ function formatCondition(value: string) {
 
 type LocationOption = { code: string; label: string };
 
+type ListingRow = {
+  id: string;
+  platform: string;
+  listingId: string;
+  url: string;
+  askPrice: number;
+  status: string;
+  listedAt: string;
+  endedAt: string;
+};
+
 type Item = {
   sku: string;
   stockUnitId: string;
   titleOverride: string;
   status: string;
   condition: string;
+
+  // ✅ metadata
+  brand: string;
+  size: string;
+  purchasedFrom: string;
+  purchaseRef: string;
+  purchaseUrl: string;
+
+  // ✅ pricing
+  targetMarginPct: string | number; // we store/edit as string below
+  recommendedPrice: string | number;
+  lastPricingEvalAt: string; // yyyy-mm-dd or ""
 
   purchaseCost: number;
   extraCost: number;
@@ -40,17 +63,6 @@ type Item = {
   archived: boolean;
   createdAt: string; // display
   listings: ListingRow[];
-};
-
-type ListingRow = {
-  id: string;
-  platform: string;
-  listingId: string;
-  url: string;
-  askPrice: number;
-  status: string;
-  listedAt: string;
-  endedAt: string;
 };
 
 const LISTING_STATUSES = ["ACTIVE", "PAUSED", "SOLD", "ENDED"];
@@ -72,21 +84,42 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
-  // Editable fields supported by your existing /api/stock/update route
+  // Existing editable fields
   const [titleOverride, setTitleOverride] = useState(item.titleOverride);
   const [condition, setCondition] = useState(item.condition);
   const [notes, setNotes] = useState(item.notes);
   const [purchaseCost, setPurchaseCost] = useState(String(item.purchaseCost ?? 0));
   const [extraCost, setExtraCost] = useState(String(item.extraCost ?? 0));
   const [purchasedAt, setPurchasedAt] = useState(item.purchasedAt);
-
   const [archived, setArchived] = useState(Boolean(item.archived));
 
-  // ✅ Location now driven by dropdown + optional custom input
+  // ✅ New metadata fields
+  const [brand, setBrand] = useState(item.brand ?? "");
+  const [size, setSize] = useState(item.size ?? "");
+  const [purchasedFrom, setPurchasedFrom] = useState(item.purchasedFrom ?? "");
+  const [purchaseRef, setPurchaseRef] = useState(item.purchaseRef ?? "");
+  const [purchaseUrl, setPurchaseUrl] = useState(item.purchaseUrl ?? "");
+
+  // ✅ Pricing fields (strings in inputs)
+  const [targetMarginPct, setTargetMarginPct] = useState(
+    item.targetMarginPct === "" || item.targetMarginPct === undefined
+      ? ""
+      : String(item.targetMarginPct),
+  );
+  const [recommendedPrice, setRecommendedPrice] = useState(
+    item.recommendedPrice === "" || item.recommendedPrice === undefined
+      ? ""
+      : String(item.recommendedPrice),
+  );
+  const [lastPricingEvalAt, setLastPricingEvalAt] = useState(item.lastPricingEvalAt ?? "");
+
+  // Location dropdown + custom input
   const [locations, setLocations] = useState<LocationOption[]>([]);
-  const [locationChoice, setLocationChoice] = useState<string>(""); // "" | "__custom__" | code
+  const [locationChoice, setLocationChoice] = useState<string>("");
   const [locationCustom, setLocationCustom] = useState<string>("");
   const [locationCode, setLocationCode] = useState(item.locationCode);
+
+  // Listings
   const [listings, setListings] = useState<ListingRow[]>(item.listings);
   const [listingBusyId, setListingBusyId] = useState<string>("");
 
@@ -104,7 +137,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       const res = await fetch("/api/locations/list");
       const data = await res.json().catch(() => ({}));
       if (res.ok && Array.isArray(data?.locations)) {
-        const opts = data.locations.map((l: any) => ({
+        const opts = data.locations.map((l: { code: string; label?: string }) => ({
           code: String(l.code),
           label: String(l.label ?? l.code),
         }));
@@ -143,6 +176,25 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       setExtraCost(String(item.extraCost ?? 0));
       setPurchasedAt(item.purchasedAt);
       setArchived(Boolean(item.archived));
+
+      setBrand(item.brand ?? "");
+      setSize(item.size ?? "");
+      setPurchasedFrom(item.purchasedFrom ?? "");
+      setPurchaseRef(item.purchaseRef ?? "");
+      setPurchaseUrl(item.purchaseUrl ?? "");
+
+      setTargetMarginPct(
+        item.targetMarginPct === "" || item.targetMarginPct === undefined
+          ? ""
+          : String(item.targetMarginPct),
+      );
+      setRecommendedPrice(
+        item.recommendedPrice === "" || item.recommendedPrice === undefined
+          ? ""
+          : String(item.recommendedPrice),
+      );
+      setLastPricingEvalAt(item.lastPricingEvalAt ?? "");
+
       setLocationCode(item.locationCode);
       setListings(item.listings);
       setMsg("");
@@ -253,7 +305,21 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       extraCost !== String(item.extraCost ?? 0) ||
       purchasedAt !== item.purchasedAt ||
       (locationCode ?? "") !== (item.locationCode ?? "") ||
-      archived !== Boolean(item.archived)
+      archived !== Boolean(item.archived) ||
+      brand !== (item.brand ?? "") ||
+      size !== (item.size ?? "") ||
+      purchasedFrom !== (item.purchasedFrom ?? "") ||
+      purchaseRef !== (item.purchaseRef ?? "") ||
+      purchaseUrl !== (item.purchaseUrl ?? "") ||
+      targetMarginPct !==
+        (item.targetMarginPct === "" || item.targetMarginPct === undefined
+          ? ""
+          : String(item.targetMarginPct)) ||
+      recommendedPrice !==
+        (item.recommendedPrice === "" || item.recommendedPrice === undefined
+          ? ""
+          : String(item.recommendedPrice)) ||
+      lastPricingEvalAt !== (item.lastPricingEvalAt ?? "")
     );
   }, [
     titleOverride,
@@ -264,6 +330,14 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
     purchasedAt,
     locationCode,
     archived,
+    brand,
+    size,
+    purchasedFrom,
+    purchaseRef,
+    purchaseUrl,
+    targetMarginPct,
+    recommendedPrice,
+    lastPricingEvalAt,
     item,
   ]);
 
@@ -278,7 +352,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       return;
     }
     if (!confirm("Discard changes?")) return;
-    setIsEditing(false); // triggers reset
+    setIsEditing(false);
   }
 
   async function saveChanges() {
@@ -298,6 +372,19 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
 
     if (!purchasedAt) missing.push("Purchased date");
 
+    // Optional pricing numeric validation (only if provided)
+    const targetMarginNum =
+      targetMarginPct.trim() === "" ? null : Number(targetMarginPct);
+    if (targetMarginNum !== null && (!Number.isFinite(targetMarginNum) || targetMarginNum < 0)) {
+      missing.push("Target margin %");
+    }
+
+    const recommendedNum =
+      recommendedPrice.trim() === "" ? null : Number(recommendedPrice);
+    if (recommendedNum !== null && (!Number.isFinite(recommendedNum) || recommendedNum < 0)) {
+      missing.push("Recommended price");
+    }
+
     if (missing.length) {
       alert("Please fix:\n\n• " + missing.join("\n• "));
       return;
@@ -310,19 +397,28 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sku: item.sku,
-          titleOverride: titleOverride.trim() || null,
-          condition: condition || null,
-          notes: notes.trim() || null,
-
-          // status not editable here (but your API supports it if you want)
-          // status: item.status,
+          titleOverride: titleOverride.trim() || "",
+          condition: condition || "",
+          notes: notes.trim() || "",
 
           purchaseCost: costNum,
           extraCost: extraNum,
-          purchasedAt, // YYYY-MM-DD
-          locationCode: (locationCode ?? "").trim(), // "" clears location in your API
+          purchasedAt,
+          locationCode: (locationCode ?? "").trim(),
 
           archived,
+
+          // ✅ metadata
+          brand: brand.trim(),
+          size: size.trim(),
+          purchasedFrom: purchasedFrom.trim(),
+          purchaseRef: purchaseRef.trim(),
+          purchaseUrl: purchaseUrl.trim(),
+
+          // ✅ pricing
+          targetMarginPct: targetMarginPct.trim() === "" ? "" : Number(targetMarginPct),
+          recommendedPrice: recommendedPrice.trim() === "" ? "" : Number(recommendedPrice),
+          lastPricingEvalAt: lastPricingEvalAt.trim(), // "" clears if API supports it
         }),
       });
 
@@ -342,7 +438,6 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
 
   return (
     <div className="tableWrap" style={{ padding: 16 }}>
-      {/* Top bar inside card */}
       <div
         style={{
           display: "flex",
@@ -364,12 +459,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           </button>
         ) : (
           <div style={{ display: "flex", gap: 10 }}>
-            <button
-              className="btn"
-              type="button"
-              disabled={busy}
-              onClick={discardChanges}
-            >
+            <button className="btn" type="button" disabled={busy} onClick={discardChanges}>
               Discard changes
             </button>
             <button
@@ -420,7 +510,17 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
             </select>
           </label>
 
-          {/* ✅ Location dropdown */}
+          <label>
+            Brand
+            <input value={brand} onChange={(e) => setBrand(e.target.value)} disabled={!isEditing} />
+          </label>
+
+          <label>
+            Size
+            <input value={size} onChange={(e) => setSize(e.target.value)} disabled={!isEditing} />
+          </label>
+
+          {/* Location dropdown */}
           <label>
             Location (Bay/Box code)
             <select
@@ -469,6 +569,43 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           ) : (
             <div />
           )}
+        </div>
+      </div>
+
+      {/* Purchase metadata */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>Purchase metadata</div>
+
+        <div className="formGrid">
+          <label>
+            Purchased from
+            <input
+              value={purchasedFrom}
+              onChange={(e) => setPurchasedFrom(e.target.value)}
+              disabled={!isEditing}
+              placeholder="e.g. Vinted, eBay, Store"
+            />
+          </label>
+
+          <label>
+            Purchase ref
+            <input
+              value={purchaseRef}
+              onChange={(e) => setPurchaseRef(e.target.value)}
+              disabled={!isEditing}
+              placeholder="Order / receipt ref"
+            />
+          </label>
+
+          <label style={{ gridColumn: "1 / -1" }}>
+            Purchase URL
+            <input
+              value={purchaseUrl}
+              onChange={(e) => setPurchaseUrl(e.target.value)}
+              disabled={!isEditing}
+              placeholder="https://..."
+            />
+          </label>
         </div>
       </div>
 
@@ -523,6 +660,49 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
         </div>
       </div>
 
+      {/* Pricing */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>Pricing</div>
+
+        <div className="formGrid">
+          <label>
+            Target margin %
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              value={targetMarginPct}
+              onChange={(e) => setTargetMarginPct(e.target.value)}
+              disabled={!isEditing}
+              placeholder="e.g. 25"
+            />
+          </label>
+
+          <label>
+            Recommended price
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              value={recommendedPrice}
+              onChange={(e) => setRecommendedPrice(e.target.value)}
+              disabled={!isEditing}
+              placeholder="e.g. 39.99"
+            />
+          </label>
+
+          <label>
+            Pricing last evaluated
+            <input
+              type="date"
+              value={lastPricingEvalAt}
+              onChange={(e) => setLastPricingEvalAt(e.target.value)}
+              disabled={!isEditing}
+            />
+          </label>
+        </div>
+      </div>
+
       {/* Notes */}
       <label>
         Notes
@@ -534,6 +714,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
         />
       </label>
 
+      {/* Listings */}
       <div style={{ marginTop: 20 }}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Listings</div>
 
@@ -552,10 +733,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           </label>
           <label>
             Listing ID
-            <input
-              value={newListingId}
-              onChange={(e) => setNewListingId(e.target.value)}
-            />
+            <input value={newListingId} onChange={(e) => setNewListingId(e.target.value)} />
           </label>
           <label>
             URL
@@ -582,19 +760,11 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           </label>
           <label>
             Listed at
-            <input
-              type="date"
-              value={newListedAt}
-              onChange={(e) => setNewListedAt(e.target.value)}
-            />
+            <input type="date" value={newListedAt} onChange={(e) => setNewListedAt(e.target.value)} />
           </label>
           <label>
             Ended at
-            <input
-              type="date"
-              value={newEndedAt}
-              onChange={(e) => setNewEndedAt(e.target.value)}
-            />
+            <input type="date" value={newEndedAt} onChange={(e) => setNewEndedAt(e.target.value)} />
           </label>
 
           <button className="btn" type="button" onClick={createListing}>
@@ -642,9 +812,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) =>
-                          x.id === listing.id ? { ...x, platform: next } : x,
-                        ),
+                        prev.map((x) => (x.id === listing.id ? { ...x, platform: next } : x)),
                       );
                     }}
                   />
@@ -656,9 +824,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) =>
-                          x.id === listing.id ? { ...x, listingId: next } : x,
-                        ),
+                        prev.map((x) => (x.id === listing.id ? { ...x, listingId: next } : x)),
                       );
                     }}
                   />
@@ -684,9 +850,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = Number(e.target.value || 0);
                       setListings((prev) =>
-                        prev.map((x) =>
-                          x.id === listing.id ? { ...x, askPrice: next } : x,
-                        ),
+                        prev.map((x) => (x.id === listing.id ? { ...x, askPrice: next } : x)),
                       );
                     }}
                   />
@@ -698,9 +862,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) =>
-                          x.id === listing.id ? { ...x, status: next } : x,
-                        ),
+                        prev.map((x) => (x.id === listing.id ? { ...x, status: next } : x)),
                       );
                     }}
                   >
@@ -719,9 +881,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) =>
-                          x.id === listing.id ? { ...x, listedAt: next } : x,
-                        ),
+                        prev.map((x) => (x.id === listing.id ? { ...x, listedAt: next } : x)),
                       );
                     }}
                   />
@@ -734,9 +894,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) =>
-                          x.id === listing.id ? { ...x, endedAt: next } : x,
-                        ),
+                        prev.map((x) => (x.id === listing.id ? { ...x, endedAt: next } : x)),
                       );
                     }}
                   />

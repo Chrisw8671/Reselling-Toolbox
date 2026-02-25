@@ -21,6 +21,8 @@ enum FulfillmentStatus {
   SHIPPED
   DELIVERED
   ISSUE
+}
+
 enum ListingStatus {
   ACTIVE
   PAUSED
@@ -87,7 +89,10 @@ model StockUnit {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  // ✅ NEW FIELDS (for buying/selling online)
+  targetMarginPct   Decimal?
+  recommendedPrice  Decimal?
+  lastPricingEvalAt DateTime?
+
   purchasedFrom String?
   purchaseRef   String?
   purchaseUrl   String?
@@ -103,14 +108,13 @@ model StockUnit {
   locationId String?
   location   Location? @relation(fields: [locationId], references: [id])
 
-  saleLine SaleLine?
-  returnCases ReturnCase[]
-  listings Listing[]
+  saleLine     SaleLine?
+  returnCases  ReturnCase[]
+  listings     Listing[]
+  actionLogs   InventoryActionLog[]
 
   archived   Boolean   @default(false)
   archivedAt DateTime?
-
-  actionLogs InventoryActionLog[]
 }
 
 model InventoryActionLog {
@@ -124,6 +128,7 @@ model InventoryActionLog {
 
   stockUnitId String?
   stockUnit   StockUnit? @relation(fields: [stockUnitId], references: [id], onDelete: SetNull)
+
   targetMarginPct   Decimal?
   recommendedPrice  Decimal?
   lastPricingEvalAt DateTime?
@@ -149,25 +154,25 @@ model Listing {
 }
 
 model Sale {
-  id              String    @id @default(uuid())
-  platform        String
-  saleDate        DateTime  @default(now())
-  orderRef        String?
-  shippingCharged Decimal   @default(0)
-  platformFees    Decimal   @default(0)
-  shippingCost    Decimal   @default(0)
-  otherCosts      Decimal   @default(0)
-  notes           String?
-  createdAt       DateTime  @default(now())
-  archived        Boolean   @default(false)
-  archivedAt      DateTime?
+  id                String            @id @default(uuid())
+  platform          String
+  saleDate          DateTime          @default(now())
+  orderRef          String?
+  shippingCharged   Decimal           @default(0)
+  platformFees      Decimal           @default(0)
+  shippingCost      Decimal           @default(0)
+  otherCosts        Decimal           @default(0)
+  notes             String?
+  createdAt         DateTime          @default(now())
+  archived          Boolean           @default(false)
+  archivedAt        DateTime?
   fulfillmentStatus FulfillmentStatus @default(PENDING)
-  trackingNumber  String?
-  carrier         String?
-  shippedAt       DateTime?
-  deliveredAt     DateTime?
+  trackingNumber    String?
+  carrier           String?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
 
-  lines SaleLine[]
+  lines       SaleLine[]
   returnCases ReturnCase[]
 }
 

@@ -9,6 +9,7 @@ import {
   getInventoryAgeDays,
   PRICING_AGE_THRESHOLDS,
 } from "@/lib/pricing";
+import { Prisma, StockStatus } from "@prisma/client";
 
 type Props = {
   searchParams?: Promise<{
@@ -20,8 +21,28 @@ type Props = {
     listed_on_any?: string;
     listed_on_count_min?: string;
     needs_price_review?: string;
+    filters?: string; // ✅ added
   }>;
 };
+
+const STATUSES: StockStatus[] = ["IN_STOCK", "LISTED", "SOLD", "RETURNED", "WRITTEN_OFF"];
+
+function isStockStatus(v: string): v is StockStatus {
+  return STATUSES.includes(v as StockStatus);
+}
+
+// Accepts either "25" meaning 25% OR "0.25" meaning 25%.
+// Returns a percent number like 25.
+function normalizeMarginPct(v: unknown, fallbackPct = 25) {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return fallbackPct;
+
+  // if stored as fraction (0..1), convert to percent
+  if (n > 0 && n <= 1) return n * 100;
+
+  // if already percent (1..100+), keep
+  return n;
+}
 
 export default async function InventoryPage({ searchParams }: Props) {
   const sp = (await searchParams) ?? {};
@@ -33,17 +54,27 @@ export default async function InventoryPage({ searchParams }: Props) {
   const listedOnCountMin = Number(sp.listed_on_count_min ?? "");
   const ageMin = Number.parseInt((sp.age_min ?? "").trim(), 10);
   const needsPriceReview = (sp.needs_price_review ?? "") === "1";
+  const filtersOpen = (sp.filters ?? "") === "1";
 
-  const status = inStock ? "IN_STOCK" : statusParam;
+  const status: StockStatus | "" = inStock
+    ? "IN_STOCK"
+    : statusParam && isStockStatus(statusParam)
+      ? statusParam
+      : "";
+
   const safeAgeMin = Number.isFinite(ageMin) && ageMin > 0 ? ageMin : null;
 
-  const where: any = { archived: false };
+  const where: Prisma.StockUnitWhereInput = { archived: false };
 
   if (status) where.status = status;
+
+  // Purchased-at cutoff (shared between age filter + needsPriceReview)
+  let purchasedAtLte: Date | null = null;
+
   if (safeAgeMin) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - safeAgeMin);
-    where.purchasedAt = { lte: cutoff };
+    purchasedAtLte = cutoff;
   }
 
   if (needsPriceReview) {
@@ -51,23 +82,27 @@ export default async function InventoryPage({ searchParams }: Props) {
     reviewCutoff.setDate(reviewCutoff.getDate() - PRICING_AGE_THRESHOLDS.markdown45);
 
     where.status = "LISTED";
-    where.purchasedAt = {
-      lte: where.purchasedAt?.lte
-        ? new Date(Math.min(where.purchasedAt.lte.getTime(), reviewCutoff.getTime()))
-        : reviewCutoff,
-    };
+
+    purchasedAtLte = purchasedAtLte
+      ? new Date(Math.min(purchasedAtLte.getTime(), reviewCutoff.getTime()))
+      : reviewCutoff;
   }
 
-  if (platform || listedOnAny) {
+  if (purchasedAtLte) {
+    where.purchasedAt = { lte: purchasedAtLte };
+  }
+
+  // Listings filters
+  if (platform) {
     where.listings = {
-      some: platform
-        ? {
-            platform: { equals: platform, mode: "insensitive" },
-          }
-        : {},
+      some: { platform: { equals: platform, mode: "insensitive" } },
     };
+  } else if (listedOnAny) {
+    // "exists any listing"
+    where.listings = { some: { id: { not: "" } } };
   }
 
+  // Text search
   if (q) {
     where.OR = [
       { sku: { contains: q, mode: "insensitive" } },
@@ -104,9 +139,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       createdAt: true,
       updatedAt: true,
       location: { select: { code: true } },
-      listings: {
-        select: { platform: true },
-      },
+      listings: { select: { platform: true, id: true } },
     },
   });
 
@@ -118,7 +151,10 @@ export default async function InventoryPage({ searchParams }: Props) {
   const itemsPlain = filteredByCount.map((it) => {
     const purchaseCost = Number(it.purchaseCost);
     const extraCost = Number(it.extraCost ?? 0);
-    const targetMarginPct = Number(it.targetMarginPct ?? 25);
+
+    // ✅ Robust handling (25 vs 0.25)
+    const targetMarginPct = normalizeMarginPct(it.targetMarginPct, 25);
+
     const ageDays = getInventoryAgeDays(it.purchasedAt);
 
     const breakEvenPrice = calcBreakEvenPrice({
@@ -152,9 +188,7 @@ export default async function InventoryPage({ searchParams }: Props) {
       recommendedPrice: computedRecommendedPrice,
       markdownPct: markdown.markdownPct,
       pricingAlert: needsReviewByAge,
-      pricingLastEvaluatedAt: it.lastPricingEvalAt
-        ? it.lastPricingEvalAt.toISOString()
-        : null,
+      pricingLastEvaluatedAt: it.lastPricingEvalAt ? it.lastPricingEvalAt.toISOString() : null,
       condition: it.condition ?? "",
       purchasedAt: it.purchasedAt ? it.purchasedAt.toISOString() : null,
       purchasedFrom: it.purchasedFrom ?? "",
@@ -188,14 +222,19 @@ export default async function InventoryPage({ searchParams }: Props) {
   }
   if (needsPriceReview) qsBase.set("needs_price_review", "1");
 
+  const openFiltersHref = `/inventory?${new URLSearchParams({
+    ...Object.fromEntries(qsBase),
+    filters: "1",
+  }).toString()}`;
+
+  const closeFiltersHref = qsBase.toString() ? `/inventory?${qsBase.toString()}` : "/inventory";
+
   const inStockOnHref = `/inventory?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
     in_stock: "1",
   }).toString()}`;
 
-  const inStockOffHref = qsBase.toString()
-    ? `/inventory?${qsBase.toString()}`
-    : "/inventory";
+  const inStockOffHref = qsBase.toString() ? `/inventory?${qsBase.toString()}` : "/inventory";
 
   return (
     <div className="container">
@@ -241,129 +280,153 @@ export default async function InventoryPage({ searchParams }: Props) {
         >
           <label style={{ flex: "1 1 280px" }}>
             Search (SKU, title, location, purchase info)
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
-              style={{ width: "100%" }}
-            />
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <input
+                  name="q"
+                  defaultValue={q}
+                  placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
+                  style={{ width: "100%" }}
+                />
+                <Link
+                  className="btn"
+                  href={filtersOpen ? closeFiltersHref : openFiltersHref}
+                  style={{ marginBottom: -5 }}
+                >
+                  {filtersOpen ? "Close" : "Filters"}
+                </Link>
+            </div>
           </label>
 
-          <label style={{ width: 220 }}>
-            Age (days min)
-            <input
-              name="age_min"
-              type="number"
-              min={1}
-              step={1}
-              defaultValue={safeAgeMin ?? ""}
-              placeholder="e.g. 90"
-              style={{ width: "100%" }}
-            />
-          </label>
+          {filtersOpen && <input type="hidden" name="filters" value="1" />}
 
-          <label style={{ width: 220 }}>
-            Status
-            <select
-              name="status"
-              defaultValue={statusParam}
-              style={{ width: "100%" }}
-              disabled={inStock}
-              title={
-                inStock ? "Turn off In Stock only to change status filter" : undefined
-              }
-            >
-              {statuses.map((s) => (
-                <option key={s} value={s}>
-                  {s ? formatStatus(s) : "All"}
-                </option>
-              ))}
-            </select>
-          </label>
+          {!filtersOpen && (
+            <>
+              <button className="btn" type="submit">
+                Search
+              </button>
 
-          <label style={{ width: 220 }}>
-            Platform
-            <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
-              <option value="">Any</option>
-              {platformOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </label>
+              {q && (
+                <Link className="btn" href="/inventory">
+                  Clear
+                </Link>
+              )}
+            </>
+          )}
 
-          <label style={{ width: 180 }}>
-            Listed on any
-            <select
-              name="listed_on_any"
-              defaultValue={listedOnAny ? "1" : "0"}
-              style={{ width: "100%" }}
-            >
-              <option value="0">No filter</option>
-              <option value="1">Yes</option>
-            </select>
-          </label>
+          {filtersOpen && (
+            <>
+              <label style={{ width: 220 }}>
+                Age (days min)
+                <input
+                  name="age_min"
+                  type="number"
+                  min={1}
+                  step={1}
+                  defaultValue={safeAgeMin ?? ""}
+                  placeholder="e.g. 90"
+                  style={{ width: "100%" }}
+                />
+              </label>
 
-          <label style={{ width: 220 }}>
-            Min listing count
-            <input
-              type="number"
-              min={0}
-              name="listed_on_count_min"
-              defaultValue={
-                Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
-                  ? listedOnCountMin
-                  : ""
-              }
-              placeholder="e.g. 2"
-              style={{ width: "100%" }}
-            />
-          </label>
+              <label style={{ width: 220 }}>
+                Status
+                <select
+                  name="status"
+                  defaultValue={statusParam}
+                  style={{ width: "100%" }}
+                  disabled={inStock}
+                  title={inStock ? "Turn off In Stock only to change status filter" : undefined}
+                >
+                  {statuses.map((s) => (
+                    <option key={s} value={s}>
+                      {s ? formatStatus(s) : "All"}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              paddingBottom: 8,
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="checkbox"
-              name="needs_price_review"
-              value="1"
-              defaultChecked={needsPriceReview}
-            />
-            Needs price review
-          </label>
+              <label style={{ width: 220 }}>
+                Platform
+                <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
+                  <option value="">Any</option>
+                  {platformOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          {inStock && <input type="hidden" name="in_stock" value="1" />}
+              <label style={{ width: 180 }}>
+                Listed on any
+                <select
+                  name="listed_on_any"
+                  defaultValue={listedOnAny ? "1" : "0"}
+                  style={{ width: "100%" }}
+                >
+                  <option value="0">No filter</option>
+                  <option value="1">Yes</option>
+                </select>
+              </label>
 
-          <button className="btn" type="submit">
-            Apply
-          </button>
+              <label style={{ width: 220 }}>
+                Min listing count
+                <input
+                  type="number"
+                  min={0}
+                  name="listed_on_count_min"
+                  defaultValue={
+                    Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
+                      ? listedOnCountMin
+                      : ""
+                  }
+                  placeholder="e.g. 2"
+                  style={{ width: "100%" }}
+                />
+              </label>
 
-          {(q ||
-            statusParam ||
-            inStock ||
-            safeAgeMin ||
-            platform ||
-            listedOnAny ||
-            (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) ||
-            needsPriceReview) && (
-            <Link className="btn" href="/inventory">
-              Clear
-            </Link>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  paddingBottom: 8,
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  name="needs_price_review"
+                  value="1"
+                  defaultChecked={needsPriceReview}
+                />
+                Needs price review
+              </label>
+
+              {inStock && <input type="hidden" name="in_stock" value="1" />}
+
+              <button className="btn" type="submit">
+                Apply
+              </button>
+
+              {(q ||
+                statusParam ||
+                inStock ||
+                safeAgeMin ||
+                platform ||
+                listedOnAny ||
+                (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) ||
+                needsPriceReview) && (
+                <Link className="btn" href="/inventory">
+                  Clear
+                </Link>
+              )}
+            </>
           )}
         </form>
       </div>
 
-      <InventoryTable
-        items={itemsPlain}
-        quickAction={safeAgeMin && safeAgeMin >= 90 ? "MARKDOWN_15" : null}
-      />
+      <InventoryTable items={itemsPlain} quickAction={safeAgeMin && safeAgeMin >= 90 ? "MARKDOWN_15" : null} />
     </div>
   );
 }

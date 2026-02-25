@@ -58,11 +58,12 @@ a {
   background: #2a2a2a;
   color: #f2f2f2;
   border: 1px solid #3a3a3a;
-  padding: 8px 14px;
+  padding: 8px 8px;
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
+  margin-bottom:9px;
 }
 
 .btn:hover {
@@ -92,9 +93,6 @@ a {
 
 .table {
   min-width: 900px;
-}
-
-.table {
   width: 100%;
   border-collapse: collapse;
 }
@@ -138,6 +136,7 @@ a {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s ease;
+  
 }
 
 .iconBtn:hover {
@@ -357,7 +356,6 @@ h3 {
   }
 }
 
-/* Make charts shorter on phones */
 .chartBox {
   height: 260px;
 }
@@ -422,13 +420,11 @@ h3 {
     border-color 0.12s ease;
 }
 
-/* Make logo clickable */
 .logoLink {
   display: flex;
   align-items: center;
 }
 
-/* Basic icon button (you may already have navIcon, keep this if not) */
 .navIcon {
   display: inline-flex;
   align-items: center;
@@ -518,4 +514,11 @@ h3 {
   .navHamburger {
     display: inline-flex;
   }
+}
+
+.titleCell {
+  max-width: 300px;      /* adjust as needed */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
