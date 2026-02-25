@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const links = [
-  { href: "/inventory", label: "Inventory" },
-  { href: "/sales", label: "Sales" },
-  { href: "/reports", label: "Reports" },
-  { href: "/watchlist", label: "Watchlist" },
+  { href: "/inventory", label: "Inventory", mobileLabel: "Stock" },
+  { href: "/sales", label: "Sales", mobileLabel: "Sales" },
+  { href: "/reports", label: "Reports", mobileLabel: "Reports" },
+  { href: "/watchlist", label: "Watchlist", mobileLabel: "Watch" },
 ];
 
 function AccountIcon({ size = 22 }: { size?: number }) {
@@ -118,62 +118,79 @@ export default function Navbar() {
   }
 
   return (
-    <header className="navbar">
-      <div className="navLeft">
-        <Link href="/" className="logoLink" aria-label="Go to dashboard">
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={40}
-            height={40}
-            className="logo"
-            priority
-          />
-        </Link>
-      </div>
+    <>
+      <header className="navbar">
+        <div className="navLeft">
+          <Link href="/" className="logoLink" aria-label="Go to dashboard">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={40}
+              height={40}
+              className="logo"
+              priority
+            />
+          </Link>
+          <Link href="/" className="brandTitle">
+            Reselling Toolbox
+          </Link>
+        </div>
 
-      {/* Desktop nav */}
-      <nav className="navLinks navDesktop">
+        {/* Desktop nav */}
+        <nav className="navLinks navDesktop">
+          {links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={isActive(l.href) ? "navActive" : ""}
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right side icons */}
+        <div className="navRight">
+          <Link
+            href="/account"
+            className={pathname.startsWith("/account") ? "navIcon navActive" : "navIcon"}
+            aria-label="Account"
+          >
+            <AccountIcon />
+          </Link>
+
+          <Link
+            href="/settings"
+            className={pathname.startsWith("/settings") ? "navIcon navActive" : "navIcon"}
+            aria-label="Settings"
+          >
+            <SettingsCogIcon />
+          </Link>
+
+          {/* Mobile hamburger */}
+          <button
+            type="button"
+            className="navIcon navHamburger"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <HamburgerIcon open={open} />
+          </button>
+        </div>
+      </header>
+
+      <nav className="mobileBottomNav" aria-label="Primary">
         {links.map((l) => (
           <Link
             key={l.href}
             href={l.href}
-            className={isActive(l.href) ? "navActive" : ""}
+            className={isActive(l.href) ? "bottomActive" : ""}
           >
-            {l.label}
+            {l.mobileLabel}
           </Link>
         ))}
       </nav>
-
-      {/* Right side icons */}
-      <div className="navRight">
-        <Link
-          href="/account"
-          className={pathname.startsWith("/account") ? "navIcon navActive" : "navIcon"}
-          aria-label="Account"
-        >
-          <AccountIcon />
-        </Link>
-
-        <Link
-          href="/settings"
-          className={pathname.startsWith("/settings") ? "navIcon navActive" : "navIcon"}
-          aria-label="Settings"
-        >
-          <SettingsCogIcon />
-        </Link>
-
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          className="navIcon navHamburger"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <HamburgerIcon open={open} />
-        </button>
-      </div>
 
       {/* Mobile dropdown */}
       {open && (
@@ -215,6 +232,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
