@@ -21,7 +21,7 @@ export default async function MobileHomePage() {
     <div className="container" style={{ maxWidth: 560, paddingBottom: 24 }}>
       <div className="toolbar" style={{ alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>Mobile Hub</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>Welcome to the Mobile Hub</h1>
           <div className="muted" style={{ marginTop: 6 }}>
             Fast, thumb-friendly shortcuts for daily reselling tasks.
           </div>

@@ -211,6 +211,16 @@ a {
   gap: 10px;
 }
 
+/* ✅ NEW: hide mobile logo on desktop by default */
+.navMobile {
+  display: none;
+}
+
+/* keep desktop elements visible by default */
+.navDesktop {
+  display: flex;
+}
+
 .logoLink {
   display: inline-flex;
   align-items: center;
@@ -265,10 +275,6 @@ a {
   color: var(--text) !important;
   background: var(--accent-soft) !important;
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border)) !important;
-}
-
-.navDesktop {
-  display: flex;
 }
 
 .navHamburger,
@@ -461,6 +467,9 @@ h3 {
   .chartBox {
     height: 220px;
   }
+
+  /* ✅ REMOVED: this was hiding .navDesktop on tablets/desktop */
+  /* .navDesktop { display: none; } */
 }
 
 @media (max-width: 768px) {
@@ -469,14 +478,19 @@ h3 {
     padding: 0 10px;
   }
 
-  .brandTitle,
-  .navDesktop,
-  .navRight a {
+  .brandTitle {
     display: none;
   }
 
-  .navHamburger {
-    display: inline-flex;
+  /* ✅ Hide desktop logo/nav and show mobile logo */
+  .navDesktop {
+    display: none !important;
+  }
+
+  .navMobile {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
   }
 
   .mainContent {

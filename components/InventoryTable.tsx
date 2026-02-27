@@ -1,6 +1,7 @@
+// InventoryTable.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { formatStatus } from "@/lib/status";
 import { moneyGBP, isoDateTime } from "@/lib/format";
@@ -35,11 +36,43 @@ export default function InventoryTable({
   quickAction?: "MARKDOWN_15" | null;
 }) {
   const router = useRouter();
+
+  // Viewport-based mobile detection (no dependency on route or CSS)
+  const [isMobile, setIsMobile] = useState(false);
+
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [statusValue, setStatusValue] = useState("");
   const [markdownPercent, setMarkdownPercent] = useState("15");
   const [locationCode, setLocationCode] = useState("");
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const sync = () => setIsMobile(mq.matches);
+
+    sync();
+
+    // Safari < 14 fallback
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyMq = mq as any;
+
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", sync);
+      return () => mq.removeEventListener("change", sync);
+    }
+
+    if (typeof anyMq.addListener === "function") {
+      anyMq.addListener(sync);
+      return () => anyMq.removeListener(sync);
+    }
+
+    return;
+  }, []);
+
+  function skuHref(sku: string) {
+    const encoded = encodeURIComponent(sku);
+    return isMobile ? `/mobile/inventory/${encoded}` : `/inventory/${encoded}`;
+  }
 
   const selectedSkus = useMemo(
     () =>
@@ -86,6 +119,7 @@ export default function InventoryTable({
           ...payload,
         }),
       });
+
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -108,10 +142,7 @@ export default function InventoryTable({
 
   async function archiveSelected() {
     if (!confirm(`Archive ${selectedSkus.length} item(s)?`)) return;
-    await runBulkAction(
-      { action: "archive" },
-      `Archived ${selectedSkus.length} item(s).`,
-    );
+    await runBulkAction({ action: "archive" }, `Archived ${selectedSkus.length} item(s).`);
   }
 
   return (
@@ -145,6 +176,7 @@ export default function InventoryTable({
               ))}
             </select>
           </label>
+
           <button
             className="btn"
             type="button"
@@ -171,6 +203,7 @@ export default function InventoryTable({
               style={{ width: "100%" }}
             />
           </label>
+
           <button
             className="btn"
             type="button"
@@ -194,6 +227,7 @@ export default function InventoryTable({
               style={{ width: "100%" }}
             />
           </label>
+
           <button
             className="btn"
             type="button"
@@ -291,10 +325,8 @@ export default function InventoryTable({
               <tr
                 className="tr rowClick"
                 key={it.sku}
-                style={
-                  it.pricingAlert ? { backgroundColor: "rgba(245, 158, 11, 0.1)" } : {}
-                }
-                onClick={() => router.push(`/inventory/${encodeURIComponent(it.sku)}`)}
+                style={it.pricingAlert ? { backgroundColor: "rgba(245, 158, 11, 0.1)" } : {}}
+                onClick={() => router.push(skuHref(it.sku))}
               >
                 <td className="td" onClick={(e) => e.stopPropagation()}>
                   <input
@@ -315,12 +347,8 @@ export default function InventoryTable({
                 <td className="td">
                   {it.purchaseRef ? it.purchaseRef : <span className="muted">—</span>}
                 </td>
-                <td className="td">
-                  {it.brand ? it.brand : <span className="muted">—</span>}
-                </td>
-                <td className="td">
-                  {it.size ? it.size : <span className="muted">—</span>}
-                </td>
+                <td className="td">{it.brand ? it.brand : <span className="muted">—</span>}</td>
+                <td className="td">{it.size ? it.size : <span className="muted">—</span>}</td>
 
                 <td className="td">
                   <span className={`badge ${it.status}`}>{formatStatus(it.status)}</span>
@@ -331,9 +359,7 @@ export default function InventoryTable({
                   )}
                 </td>
 
-                <td className="td">
-                  {it.location?.code ?? <span className="muted">—</span>}
-                </td>
+                <td className="td">{it.location?.code ?? <span className="muted">—</span>}</td>
                 <td className="td">{moneyGBP(it.purchaseCost)}</td>
                 <td className="td">{moneyGBP(it.breakEvenPrice)}</td>
                 <td className="td">
@@ -354,9 +380,7 @@ export default function InventoryTable({
                       className="iconBtn"
                       title="Edit"
                       type="button"
-                      onClick={() =>
-                        router.push(`/inventory/${encodeURIComponent(it.sku)}`)
-                      }
+                      onClick={() => router.push(skuHref(it.sku))}
                     >
                       ✎
                     </button>
@@ -377,7 +401,7 @@ export default function InventoryTable({
                           return;
                         }
                         router.refresh();
-                        router.push(`/inventory/${encodeURIComponent(data.sku)}`);
+                        router.push(skuHref(data.sku));
                       }}
                     >
                       ⧉

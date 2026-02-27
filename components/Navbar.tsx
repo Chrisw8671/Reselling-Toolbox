@@ -6,10 +6,16 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const links = [
-  { href: "/inventory", label: "Inventory", mobileLabel: "Stock" },
-  { href: "/sales", label: "Sales", mobileLabel: "Sales" },
-  { href: "/reports", label: "Reports", mobileLabel: "Reports" },
-  { href: "/watchlist", label: "Watchlist", mobileLabel: "Watch" },
+  { href: "/inventory", label: "Inventory"},
+  { href: "/sales", label: "Sales"},
+  { href: "/reports", label: "Reports"},
+  { href: "/watchlist", label: "Watchlist"},
+];
+const mobilelinks = [
+  { href: "/mobile/inventory", label: "Inventory"},
+  { href: "/mobile/sales", label: "Sales"},
+  { href: "/mobile/report", label: "Report"},
+  { href: "/mobile/wishlist", label: "Watch"},
 ];
 
 function AccountIcon({ size = 22 }: { size?: number }) {
@@ -76,8 +82,20 @@ export default function Navbar() {
   return (
     <>
       <header className="navbar">
-        <div className="navLeft">
+        <div className="navLeft navDesktop">
           <Link href="/" className="logoLink" aria-label="Go to dashboard">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={40}
+              height={40}
+              className="logo"
+              priority
+            />
+          </Link>
+        </div>
+        <div className="navLeft navMobile">
+          <Link href="/mobile/" className="logoLink" aria-label="Go to dashboard">
             <Image
               src="/logo.png"
               alt="Logo"
@@ -123,13 +141,13 @@ export default function Navbar() {
       </header>
 
       <nav className="mobileBottomNav" aria-label="Primary">
-        {links.map((l) => (
+        {mobilelinks.map((l) => (
           <Link
             key={l.href}
             href={l.href}
             className={isActive(l.href) ? "bottomActive" : ""}
           >
-            {l.mobileLabel}
+            {l.label}
           </Link>
         ))}
       </nav>
