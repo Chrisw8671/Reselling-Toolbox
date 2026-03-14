@@ -62,8 +62,57 @@ type Item = {
 
   archived: boolean;
   createdAt: string; // display
+  saleId: string;
+  saleDate: string;
+  fulfillmentStatus: string;
+  shippedAt: string;
+  deliveredAt: string;
   listings: ListingRow[];
 };
+
+const MAIN_STAGES = ["INVENTORY", "LISTED", "SOLD", "SHIPPED", "COMPLETED"] as const;
+
+const STAGE_LABEL: Record<(typeof MAIN_STAGES)[number], string> = {
+  INVENTORY: "In Inventory",
+  LISTED: "Listed",
+  SOLD: "Sold",
+  SHIPPED: "Shipped",
+  COMPLETED: "Completed",
+};
+
+type MainStage = (typeof MAIN_STAGES)[number];
+
+const PREP_TASKS = [
+  "Tested",
+  "Cleaned",
+  "Photos taken",
+  "Description written",
+  "Ready to list",
+] as const;
+
+function computeMainStage(item: Item): MainStage {
+  if (item.fulfillmentStatus === "DELIVERED") return "COMPLETED";
+  if (item.fulfillmentStatus === "SHIPPED") return "SHIPPED";
+  if (item.status === "SOLD") return "SOLD";
+  if (item.status === "LISTED") return "LISTED";
+  return "INVENTORY";
+}
+
+function getStageDate(item: Item, stage: MainStage) {
+  if (stage === "INVENTORY") return item.purchasedAt;
+  if (stage === "SOLD") return item.saleDate;
+  if (stage === "SHIPPED") return item.shippedAt;
+  if (stage === "COMPLETED") return item.deliveredAt;
+  return "";
+}
+
+function getDaysInStage(isoDate: string) {
+  if (!isoDate) return null;
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return null;
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.max(0, Math.floor((Date.now() - d.getTime()) / msPerDay));
+}
 
 const LISTING_STATUSES = ["ACTIVE", "PAUSED", "SOLD", "ENDED"];
 
@@ -111,7 +160,9 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       ? ""
       : String(item.recommendedPrice),
   );
-  const [lastPricingEvalAt, setLastPricingEvalAt] = useState(item.lastPricingEvalAt ?? "");
+  const [lastPricingEvalAt, setLastPricingEvalAt] = useState(
+    item.lastPricingEvalAt ?? "",
+  );
 
   // Location dropdown + custom input
   const [locations, setLocations] = useState<LocationOption[]>([]);
@@ -122,6 +173,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
   // Listings
   const [listings, setListings] = useState<ListingRow[]>(item.listings);
   const [listingBusyId, setListingBusyId] = useState<string>("");
+  const [stageBusy, setStageBusy] = useState(false);
 
   const [newPlatform, setNewPlatform] = useState("");
   const [newListingId, setNewListingId] = useState("");
@@ -130,6 +182,90 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
   const [newStatus, setNewStatus] = useState("ACTIVE");
   const [newListedAt, setNewListedAt] = useState(new Date().toISOString().slice(0, 10));
   const [newEndedAt, setNewEndedAt] = useState("");
+
+  const currentStage = computeMainStage(item);
+  const currentStageIndex = MAIN_STAGES.indexOf(currentStage);
+  const currentStageDate = getStageDate(item, currentStage);
+  const daysInCurrentStage = getDaysInStage(currentStageDate);
+  const isCurrentStageStale =
+    typeof daysInCurrentStage === "number" && daysInCurrentStage >= 30;
+
+  const preparationTaskState = useMemo(() => {
+    const text = `${titleOverride}\n${notes}`.toLowerCase();
+    return {
+      Tested: /\btested\b/.test(text),
+      Cleaned: /\bclean(ed|ing)?\b/.test(text),
+      "Photos taken": item.listings.length > 0 || /\bphoto(s|graphed)?\b/.test(text),
+      "Description written": titleOverride.trim().length >= 12,
+      "Ready to list":
+        Boolean(condition) &&
+        titleOverride.trim().length >= 12 &&
+        /\btested\b/.test(text) &&
+        /\bclean(ed|ing)?\b/.test(text),
+    } as Record<(typeof PREP_TASKS)[number], boolean>;
+  }, [condition, item.listings.length, notes, titleOverride]);
+
+  async function moveToStage(stage: MainStage) {
+    if (stageBusy) return;
+    if (stage === currentStage) return;
+
+    const targetIndex = MAIN_STAGES.indexOf(stage);
+    if (targetIndex > currentStageIndex + 1) {
+      alert("Move through stages one step at a time.");
+      return;
+    }
+
+    setStageBusy(true);
+    try {
+      if (stage === "LISTED") {
+        const res = await fetch("/api/stock/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sku: item.sku, status: "LISTED" }),
+        });
+        if (!res.ok) throw new Error("Failed to move item to Listed");
+      } else if (stage === "SOLD") {
+        const res = await fetch("/api/stock/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sku: item.sku, status: "SOLD" }),
+        });
+        if (!res.ok) throw new Error("Failed to move item to Sold");
+      } else if (stage === "SHIPPED") {
+        if (!item.saleId)
+          throw new Error("Create/link a sale before shipping this item.");
+        const res = await fetch(`/api/sales/${item.saleId}/fulfillment`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fulfillmentStatus: "SHIPPED" }),
+        });
+        if (!res.ok) throw new Error("Failed to move item to Shipped");
+      } else if (stage === "COMPLETED") {
+        if (!item.saleId)
+          throw new Error("Create/link a sale before completing this item.");
+        const res = await fetch(`/api/sales/${item.saleId}/fulfillment`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fulfillmentStatus: "DELIVERED" }),
+        });
+        if (!res.ok) throw new Error("Failed to move item to Completed");
+      } else {
+        const res = await fetch("/api/stock/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sku: item.sku, status: "IN_STOCK" }),
+        });
+        if (!res.ok) throw new Error("Failed to move item to Inventory");
+      }
+
+      router.refresh();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update stage";
+      alert(message);
+    } finally {
+      setStageBusy(false);
+    }
+  }
 
   // Load locations
   useEffect(() => {
@@ -375,13 +511,19 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
     // Optional pricing numeric validation (only if provided)
     const targetMarginNum =
       targetMarginPct.trim() === "" ? null : Number(targetMarginPct);
-    if (targetMarginNum !== null && (!Number.isFinite(targetMarginNum) || targetMarginNum < 0)) {
+    if (
+      targetMarginNum !== null &&
+      (!Number.isFinite(targetMarginNum) || targetMarginNum < 0)
+    ) {
       missing.push("Target margin %");
     }
 
     const recommendedNum =
       recommendedPrice.trim() === "" ? null : Number(recommendedPrice);
-    if (recommendedNum !== null && (!Number.isFinite(recommendedNum) || recommendedNum < 0)) {
+    if (
+      recommendedNum !== null &&
+      (!Number.isFinite(recommendedNum) || recommendedNum < 0)
+    ) {
       missing.push("Recommended price");
     }
 
@@ -417,7 +559,8 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
 
           // ✅ pricing
           targetMarginPct: targetMarginPct.trim() === "" ? "" : Number(targetMarginPct),
-          recommendedPrice: recommendedPrice.trim() === "" ? "" : Number(recommendedPrice),
+          recommendedPrice:
+            recommendedPrice.trim() === "" ? "" : Number(recommendedPrice),
           lastPricingEvalAt: lastPricingEvalAt.trim(), // "" clears if API supports it
         }),
       });
@@ -438,6 +581,94 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
 
   return (
     <div className="tableWrap" style={{ padding: 16 }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 800, marginBottom: 10 }}>Workflow</div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+            gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          {MAIN_STAGES.map((stage, index) => {
+            const isDone = index < currentStageIndex;
+            const isCurrent = index === currentStageIndex;
+            const isFuture = index > currentStageIndex;
+            return (
+              <button
+                key={STAGE_LABEL[stage]}
+                type="button"
+                className="btn"
+                onClick={() => moveToStage(stage)}
+                disabled={
+                  stageBusy || isEditing || (isFuture && index > currentStageIndex + 1)
+                }
+                title={stageBusy ? "Updating stage..." : "Click to update stage"}
+                style={{
+                  textAlign: "left",
+                  borderColor: isDone ? "#22c55e" : isCurrent ? "#60a5fa" : "#374151",
+                  boxShadow: isCurrent
+                    ? "0 0 0 1px #60a5fa, 0 0 12px rgba(96,165,250,.35)"
+                    : "none",
+                  opacity: isFuture ? 0.65 : 1,
+                }}
+              >
+                <div style={{ fontWeight: 700 }}>
+                  {isDone ? "✓ " : ""}
+                  {STAGE_LABEL[stage]}
+                </div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+                  {getStageDate(item, stage) || "—"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          className="muted"
+          style={{
+            fontSize: 13,
+            marginBottom: 12,
+            color: isCurrentStageStale ? "#f59e0b" : undefined,
+          }}
+        >
+          Days in current stage: {daysInCurrentStage ?? "—"}
+          {isCurrentStageStale ? " • Stale (30+ days)" : ""}
+        </div>
+
+        {(item.status === "RETURNED" ||
+          item.status === "WRITTEN_OFF" ||
+          item.archived) && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+            {item.status === "RETURNED" && (
+              <span className="badge" style={{ background: "#f59e0b", color: "#111827" }}>
+                Return requested / Returned
+              </span>
+            )}
+            {item.status === "WRITTEN_OFF" && (
+              <span className="badge" style={{ background: "#ef4444", color: "#fff" }}>
+                Damaged / Dead stock
+              </span>
+            )}
+            {item.archived && (
+              <span className="badge" style={{ background: "#6b7280", color: "#fff" }}>
+                On hold (archived)
+              </span>
+            )}
+          </div>
+        )}
+        <div style={{ fontWeight: 700, marginBottom: 8 }}>Preparation checklist</div>
+        <div style={{ display: "grid", gap: 6 }}>
+          {PREP_TASKS.map((task) => (
+            <div key={task} className="muted" style={{ fontSize: 13 }}>
+              {preparationTaskState[task] ? "✅" : "⬜"} {task}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div
         style={{
           display: "flex",
@@ -459,7 +690,12 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           </button>
         ) : (
           <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn" type="button" disabled={busy} onClick={discardChanges}>
+            <button
+              className="btn"
+              type="button"
+              disabled={busy}
+              onClick={discardChanges}
+            >
               Discard changes
             </button>
             <button
@@ -512,12 +748,20 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
 
           <label>
             Brand
-            <input value={brand} onChange={(e) => setBrand(e.target.value)} disabled={!isEditing} />
+            <input
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              disabled={!isEditing}
+            />
           </label>
 
           <label>
             Size
-            <input value={size} onChange={(e) => setSize(e.target.value)} disabled={!isEditing} />
+            <input
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              disabled={!isEditing}
+            />
           </label>
 
           {/* Location dropdown */}
@@ -733,7 +977,10 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           </label>
           <label>
             Listing ID
-            <input value={newListingId} onChange={(e) => setNewListingId(e.target.value)} />
+            <input
+              value={newListingId}
+              onChange={(e) => setNewListingId(e.target.value)}
+            />
           </label>
           <label>
             URL
@@ -760,11 +1007,19 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           </label>
           <label>
             Listed at
-            <input type="date" value={newListedAt} onChange={(e) => setNewListedAt(e.target.value)} />
+            <input
+              type="date"
+              value={newListedAt}
+              onChange={(e) => setNewListedAt(e.target.value)}
+            />
           </label>
           <label>
             Ended at
-            <input type="date" value={newEndedAt} onChange={(e) => setNewEndedAt(e.target.value)} />
+            <input
+              type="date"
+              value={newEndedAt}
+              onChange={(e) => setNewEndedAt(e.target.value)}
+            />
           </label>
 
           <button className="btn" type="button" onClick={createListing}>
@@ -812,7 +1067,9 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) => (x.id === listing.id ? { ...x, platform: next } : x)),
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, platform: next } : x,
+                        ),
                       );
                     }}
                   />
@@ -824,7 +1081,9 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) => (x.id === listing.id ? { ...x, listingId: next } : x)),
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, listingId: next } : x,
+                        ),
                       );
                     }}
                   />
@@ -850,7 +1109,9 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = Number(e.target.value || 0);
                       setListings((prev) =>
-                        prev.map((x) => (x.id === listing.id ? { ...x, askPrice: next } : x)),
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, askPrice: next } : x,
+                        ),
                       );
                     }}
                   />
@@ -862,7 +1123,9 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) => (x.id === listing.id ? { ...x, status: next } : x)),
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, status: next } : x,
+                        ),
                       );
                     }}
                   >
@@ -881,7 +1144,9 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) => (x.id === listing.id ? { ...x, listedAt: next } : x)),
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, listedAt: next } : x,
+                        ),
                       );
                     }}
                   />
@@ -894,7 +1159,9 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     onChange={(e) => {
                       const next = e.target.value;
                       setListings((prev) =>
-                        prev.map((x) => (x.id === listing.id ? { ...x, endedAt: next } : x)),
+                        prev.map((x) =>
+                          x.id === listing.id ? { ...x, endedAt: next } : x,
+                        ),
                       );
                     }}
                   />

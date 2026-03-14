@@ -68,6 +68,25 @@ export default async function SaleDetailPage({ params }: Props) {
 
   if (!sale) return notFound();
 
+  const returnCases = sale.returnCases.map((rc) => ({
+    id: rc.id,
+    stockUnitId: rc.stockUnitId,
+    reason: rc.reason,
+    openedAt: rc.openedAt.toISOString(),
+    closedAt: rc.closedAt ? rc.closedAt.toISOString() : null,
+    refundAmount: Number(rc.refundAmount),
+    returnShippingCost: Number(rc.returnShippingCost),
+    restockable: rc.restockable,
+  }));
+
+  const returnManagerLines = sale.lines.map((line) => ({
+    stockUnit: {
+      id: line.stockUnit.id,
+      sku: line.stockUnit.sku,
+      titleOverride: line.stockUnit.titleOverride,
+    },
+  }));
+
   const lines = sale.lines.map((l) => {
     const buy = Number(l.stockUnit.purchaseCost);
     const sell = Number(l.salePrice);
@@ -128,8 +147,8 @@ export default async function SaleDetailPage({ params }: Props) {
 
       <ReturnManager
         saleId={sale.id}
-        lines={sale.lines}
-        existingCases={sale.returnCases}
+        lines={returnManagerLines}
+        existingCases={returnCases}
       />
 
       <SaleFulfillmentEditor

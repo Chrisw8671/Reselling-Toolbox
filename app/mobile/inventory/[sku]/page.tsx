@@ -49,6 +49,19 @@ export default async function InventoryDetailPage({ params }: Props) {
           endedAt: true,
         },
       },
+      saleLine: {
+        select: {
+          sale: {
+            select: {
+              id: true,
+              saleDate: true,
+              fulfillmentStatus: true,
+              shippedAt: true,
+              deliveredAt: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -83,6 +96,11 @@ export default async function InventoryDetailPage({ params }: Props) {
       : "",
 
     createdAt: item.createdAt.toISOString().slice(0, 16).replace("T", " "),
+    saleId: item.saleLine?.sale.id ?? "",
+    saleDate: item.saleLine?.sale.saleDate.toISOString().slice(0, 10) ?? "",
+    fulfillmentStatus: item.saleLine?.sale.fulfillmentStatus ?? "",
+    shippedAt: item.saleLine?.sale.shippedAt?.toISOString().slice(0, 10) ?? "",
+    deliveredAt: item.saleLine?.sale.deliveredAt?.toISOString().slice(0, 10) ?? "",
 
     listings: item.listings.map((listing) => ({
       id: listing.id,
