@@ -114,18 +114,6 @@ function getDaysInStage(isoDate: string) {
   return Math.max(0, Math.floor((Date.now() - d.getTime()) / msPerDay));
 }
 
-function hasTestedNote(text: string) {
-  return /tested/.test(text);
-}
-
-function hasCleanedNote(text: string) {
-  return /clean(ed|ing)?/.test(text);
-}
-
-function hasPhotoNote(text: string) {
-  return /photo(s|graphed)?/.test(text);
-}
-
 const LISTING_STATUSES = ["ACTIVE", "PAUSED", "SOLD", "ENDED"];
 
 function badgeColor(platform: string) {
@@ -203,19 +191,17 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
     typeof daysInCurrentStage === "number" && daysInCurrentStage >= 30;
 
   const preparationTaskState = useMemo(() => {
-    const text = `${titleOverride}
-${notes}`.toLowerCase();
-    const hasTested = hasTestedNote(text);
-    const hasCleaned = hasCleanedNote(text);
-    const hasPhotos = item.listings.length > 0 || hasPhotoNote(text);
-    const hasDescription = titleOverride.trim().length >= 12;
-
+    const text = `${titleOverride}\n${notes}`.toLowerCase();
     return {
-      Tested: hasTested,
-      Cleaned: hasCleaned,
-      "Photos taken": hasPhotos,
-      "Description written": hasDescription,
-      "Ready to list": Boolean(condition) && hasDescription && hasTested && hasCleaned,
+      Tested: /\btested\b/.test(text),
+      Cleaned: /\bclean(ed|ing)?\b/.test(text),
+      "Photos taken": item.listings.length > 0 || /\bphoto(s|graphed)?\b/.test(text),
+      "Description written": titleOverride.trim().length >= 12,
+      "Ready to list":
+        Boolean(condition) &&
+        titleOverride.trim().length >= 12 &&
+        /\btested\b/.test(text) &&
+        /\bclean(ed|ing)?\b/.test(text),
     } as Record<(typeof PREP_TASKS)[number], boolean>;
   }, [condition, item.listings.length, notes, titleOverride]);
 

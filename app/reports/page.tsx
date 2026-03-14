@@ -21,22 +21,6 @@ function lastNMonths(n: number) {
 }
 
 export default async function ReportsPage() {
-  async function addToWatchlist(formData: FormData) {
-    "use server";
-
-    const productId = String(formData.get("productId") ?? "").trim();
-    if (!productId) return;
-
-    await prisma.productWatch.upsert({
-      where: { productId },
-      create: { productId, active: true },
-      update: { active: true },
-    });
-
-    revalidatePath("/reports");
-    revalidatePath("/watchlist");
-  }
-
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const since30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -399,9 +383,6 @@ export default async function ReportsPage() {
           </div>
         </div>
 
-        <Link className="btn" href="/watchlist">
-          Watchlist
-        </Link>
       </div>
 
       <div
@@ -524,18 +505,6 @@ export default async function ReportsPage() {
                   </td>
                   <td>{m.avgDaysToSell.toFixed(1)} days</td>
                   <td>{m.grossMarginPct.toFixed(1)}%</td>
-                  <td>
-                    {m.watched ? (
-                      <span className="muted">Watching</span>
-                    ) : (
-                      <form action={addToWatchlist}>
-                        <input type="hidden" name="productId" value={m.productId} />
-                        <button className="btn" type="submit">
-                          Add to watchlist
-                        </button>
-                      </form>
-                    )}
-                  </td>
                 </tr>
               ))
             )}
@@ -586,7 +555,7 @@ export default async function ReportsPage() {
             </tbody>
           </table>
         </div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

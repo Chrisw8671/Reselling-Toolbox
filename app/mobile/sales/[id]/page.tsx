@@ -69,21 +69,60 @@ export default async function SaleDetailPage({ params }: Props) {
 
   if (!sale) return notFound();
 
-  const {
-    returnCases,
-    returnManagerLines,
-    lines,
-    itemsTotal,
-    purchaseTotal,
-    shippingCharged,
-    platformFees,
-    shippingCost,
-    otherCosts,
-    refundAmount,
-    returnShippingCost,
-    revenue,
-    profit,
-  } = buildSaleDetailView(sale);
+  const returnCases = sale.returnCases.map((rc) => ({
+    id: rc.id,
+    stockUnitId: rc.stockUnitId,
+    reason: rc.reason,
+    openedAt: rc.openedAt.toISOString(),
+    closedAt: rc.closedAt ? rc.closedAt.toISOString() : null,
+    refundAmount: Number(rc.refundAmount),
+    returnShippingCost: Number(rc.returnShippingCost),
+    restockable: rc.restockable,
+  }));
+
+  const returnManagerLines = sale.lines.map((line) => ({
+    stockUnit: {
+      id: line.stockUnit.id,
+      sku: line.stockUnit.sku,
+      titleOverride: line.stockUnit.titleOverride,
+    },
+  }));
+
+  const lines = sale.lines.map((l) => {
+    const buy = Number(l.stockUnit.purchaseCost);
+    const sell = Number(l.salePrice);
+    return {
+      sku: l.stockUnit.sku,
+      title: l.stockUnit.titleOverride ?? "—",
+      loc: l.stockUnit.location?.code ?? "—",
+      buy,
+      sell,
+      itemProfit: sell - buy,
+    };
+  });
+
+  const itemsTotal = lines.reduce((s, x) => s + x.sell, 0);
+  const purchaseTotal = lines.reduce((s, x) => s + x.buy, 0);
+
+  const shippingCharged = Number(sale.shippingCharged);
+  const platformFees = Number(sale.platformFees);
+  const shippingCost = Number(sale.shippingCost);
+  const otherCosts = Number(sale.otherCosts);
+  const refundAmount = sale.returnCases.reduce((s, r) => s + Number(r.refundAmount), 0);
+  const returnShippingCost = sale.returnCases.reduce(
+    (s, r) => s + Number(r.returnShippingCost),
+    0,
+  );
+
+  const revenue = itemsTotal + shippingCharged;
+  const costs =
+    purchaseTotal +
+    platformFees +
+    shippingCost +
+    otherCosts +
+    refundAmount +
+    returnShippingCost;
+  const profit = revenue - costs;
 
   return (
     <div className="container">

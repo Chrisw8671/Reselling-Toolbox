@@ -23,20 +23,20 @@ export default async function MobileInventoryPage() {
           <h1 style={{ fontSize: 24, margin: 0 }}>Inventory</h1>
           <div className="muted" style={{ marginTop: 4 }}>Latest 20 items for quick review.</div>
         </div>
-        <Link href="/inventory/new" className="btn">+ Add</Link>
+        <Link href="/mobile/inventory/new" className="btn">+ Add</Link>
       </div>
 
       <div style={{ display: "grid", gap: 10 }}>
         {items.map((item) => (
           <Link
-            href={`/inventory/${item.sku}`}
+            href={`/mobile/inventory/${item.sku}`}
             key={item.sku}
             className="tableWrap"
             style={{ padding: 12, textDecoration: "none" }}
           >
             <div style={{ fontWeight: 700 }}>{item.titleOverride || item.sku}</div>
             <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
-              SKU {item.sku} • {item.status} • {item.location?.code || "No location"}
+              SKU {item.sku} • {item.status .toLowerCase() .replace(/_/g, " ") .replace(/^\w/, c => c.toUpperCase())} • {item.location?.code || "No location"}
             </div>
             <div style={{ marginTop: 6, fontSize: 14 }}>
               Cost £{Number(item.purchaseCost).toFixed(2)}

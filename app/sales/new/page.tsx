@@ -1,7 +1,9 @@
+// app/sales/new/page.tsx
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type SaleItem = {
   stockUnitId: string;
@@ -14,6 +16,9 @@ type SaleItem = {
 };
 
 export default function CreateSalePage() {
+  const searchParams = useSearchParams();
+  const didPrefillRef = useRef(false);
+
   const [platform, setPlatform] = useState("Vinted");
   const [saleDate, setSaleDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [orderRef, setOrderRef] = useState("");
@@ -27,14 +32,13 @@ export default function CreateSalePage() {
   const [items, setItems] = useState<SaleItem[]>([]);
   const [msg, setMsg] = useState<string>("");
 
-  async function addSku() {
+  async function addSkuValue(rawSku: string) {
     setMsg("");
-    const sku = skuInput.trim();
+    const sku = rawSku.trim();
     if (!sku) return;
 
     // prevent duplicates
     if (items.some((x) => x.sku.toUpperCase() === sku.toUpperCase())) {
-      setMsg("That Item is already added.");
       return;
     }
 
@@ -42,7 +46,7 @@ export default function CreateSalePage() {
     const data = await res.json();
 
     if (!res.ok) {
-      setMsg(data.error ?? "Could not add Item");
+      setMsg(data.error ?? `Could not add ${sku}`);
       return;
     }
 
@@ -67,9 +71,39 @@ export default function CreateSalePage() {
         salePrice: "",
       },
     ]);
+  }
 
+  async function addSku() {
+    const sku = skuInput.trim();
+    if (!sku) return;
+    await addSkuValue(sku);
     setSkuInput("");
   }
+
+  // ✅ Prefill from /sales/new?skus=SKU1,SKU2,SKU3
+  useEffect(() => {
+    if (didPrefillRef.current) return;
+    didPrefillRef.current = true;
+
+    const skusParam = (searchParams.get("skus") ?? "").trim();
+    if (!skusParam) return;
+
+    const skus = skusParam
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (skus.length === 0) return;
+
+    (async () => {
+      for (const sku of skus) {
+        // sequential to keep UI stable + avoid hammering API
+        // eslint-disable-next-line no-await-in-loop
+        await addSkuValue(sku);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function removeItem(stockUnitId: string) {
     setItems((prev) => prev.filter((x) => x.stockUnitId !== stockUnitId));
@@ -332,9 +366,7 @@ export default function CreateSalePage() {
           </table>
         </div>
 
-        <div
-          style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 14 }}
-        >
+        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 14 }}>
           <button className="btn" type="button" onClick={saveSale}>
             Save Sale
           </button>
