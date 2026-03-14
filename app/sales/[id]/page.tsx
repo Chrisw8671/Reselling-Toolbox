@@ -5,6 +5,7 @@ import SaleArchiveButton from "@/components/SaleArchiveButton";
 import ReturnManager from "@/components/ReturnManager";
 import SaleFulfillmentEditor from "@/components/SaleFulfillmentEditor";
 import { FULFILLMENT_LABEL, FulfillmentStatus } from "@/lib/fulfillment";
+import { buildSaleDetailView } from "@/lib/sale-detail";
 
 type Props = { params: Promise<{ id: string }> };
 
