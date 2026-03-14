@@ -1,4 +1,4 @@
-// InventoryTable.tsx
+// components/InventoryTable.tsx
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -37,48 +37,44 @@ export default function InventoryTable({
 }) {
   const router = useRouter();
 
-  // Viewport-based mobile detection (no dependency on route or CSS)
   const [isMobile, setIsMobile] = useState(false);
-
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
   const [statusValue, setStatusValue] = useState("");
   const [markdownPercent, setMarkdownPercent] = useState("15");
   const [locationCode, setLocationCode] = useState("");
+  const [copyToast, setCopyToast] = useState<string | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
     const sync = () => setIsMobile(mq.matches);
-
     sync();
-
-    // Safari < 14 fallback
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const anyMq = mq as any;
-
-    if (typeof mq.addEventListener === "function") {
-      mq.addEventListener("change", sync);
-      return () => mq.removeEventListener("change", sync);
-    }
-
-    if (typeof anyMq.addListener === "function") {
-      anyMq.addListener(sync);
-      return () => anyMq.removeListener(sync);
-    }
-
-    return;
+    mq.addEventListener?.("change", sync);
+    return () => mq.removeEventListener?.("change", sync);
   }, []);
+
+  useEffect(() => {
+    if (!copyToast) return;
+    const t = window.setTimeout(() => setCopyToast(null), 2000);
+    return () => window.clearTimeout(t);
+  }, [copyToast]);
 
   function skuHref(sku: string) {
     const encoded = encodeURIComponent(sku);
     return isMobile ? `/mobile/inventory/${encoded}` : `/inventory/${encoded}`;
   }
 
+  async function copySkuToClipboard(sku: string) {
+    try {
+      await navigator.clipboard.writeText(sku);
+      setCopyToast(`Copied ${sku}`);
+    } catch {
+      setCopyToast("Could not copy");
+    }
+  }
+
   const selectedSkus = useMemo(
-    () =>
-      Object.entries(selected)
-        .filter(([, v]) => v)
-        .map(([k]) => k),
+    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
     [selected],
   );
 
@@ -121,18 +117,12 @@ export default function InventoryTable({
       });
 
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
         alert(data?.error ?? "Bulk update failed");
         return;
       }
 
-      const conflicts = Array.isArray(data?.conflictSkus) ? data.conflictSkus.length : 0;
-      const conflictMessage = conflicts
-        ? `\n${conflicts} item(s) skipped due to concurrent updates.`
-        : "";
-
-      alert(`${successMessage}${conflictMessage}`);
+      alert(successMessage);
       setSelected({});
       router.refresh();
     } finally {
@@ -145,29 +135,68 @@ export default function InventoryTable({
     await runBulkAction({ action: "archive" }, `Archived ${selectedSkus.length} item(s).`);
   }
 
+  function createSaleFromSelected() {
+    if (selectedSkus.length === 0) return;
+    const qs = new URLSearchParams({ skus: selectedSkus.join(",") }).toString();
+    router.push(`/sales/new?${qs}`);
+  }
+
   return (
     <div className="tableWrap">
+      {copyToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            bottom: 10,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1000,
+            padding: "10px 14px",
+            borderRadius: 12,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(0,0,0,0.75)",
+            backdropFilter: "blur(6px)",
+            fontSize: 13,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {copyToast}
+        </div>
+      )}
+
+      {/* BULK BAR: wraps onto new lines on smaller screens (no clipping) */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           gap: 12,
           padding: 12,
-          flexWrap: "wrap",
+          flexWrap: "wrap", // ✅ allow wrap
         }}
       >
-        <div className="muted" style={{ fontSize: 13 }}>
-          {items.length} item(s) • Selected: {selectedSkus.length}
+        {/* Top-left text */}
+        <div style={{ alignSelf: "flex-start", whiteSpace: "nowrap", minWidth: 160 }}>
+          <div className="muted" style={{ fontSize: 13 }}>
+            {items.length} item(s) • Selected: {selectedSkus.length}
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "end" }}>
-          <label style={{ minWidth: 180 }}>
+        {/* Controls: wrap + keep nice alignment */}
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            alignItems: "flex-end",
+            flexWrap: "wrap", // ✅ allow wrap
+            justifyContent: "flex-end",
+            flex: "1 1 520px",
+          }}
+        >
+          <label style={{display: "flex", flexDirection: "column", minWidth: 180,}}>
             Set status
-            <select
-              value={statusValue}
-              onChange={(e) => setStatusValue(e.target.value)}
-              style={{ width: "100%" }}
-            >
+            <select value={statusValue} onChange={(e) => setStatusValue(e.target.value)}>
               <option value="">Choose…</option>
               {STOCK_STATUSES.map((status) => (
                 <option key={status} value={status}>
@@ -191,16 +220,14 @@ export default function InventoryTable({
             Apply status
           </button>
 
-          <label style={{ minWidth: 140 }}>
+          <label style={{ display: "flex", flexDirection: "column", minWidth: 110 }}>
             Markdown %
             <input
               type="number"
               min={0}
               max={100}
-              step={1}
               value={markdownPercent}
               onChange={(e) => setMarkdownPercent(e.target.value)}
-              style={{ width: "100%" }}
             />
           </label>
 
@@ -218,14 +245,9 @@ export default function InventoryTable({
             Apply markdown
           </button>
 
-          <label style={{ minWidth: 140 }}>
+          <label style={{ display: "flex", flexDirection: "column", minWidth: 140 }}>
             Move location
-            <input
-              value={locationCode}
-              onChange={(e) => setLocationCode(e.target.value)}
-              placeholder="BOX-01"
-              style={{ width: "100%" }}
-            />
+            <input value={locationCode} onChange={(e) => setLocationCode(e.target.value)} />
           </label>
 
           <button
@@ -235,7 +257,7 @@ export default function InventoryTable({
             onClick={() =>
               runBulkAction(
                 { action: "move_location", locationCode },
-                `Moved ${selectedSkus.length} item(s) to ${locationCode.toUpperCase()}.`,
+                `Moved ${selectedSkus.length} item(s).`,
               )
             }
           >
@@ -246,8 +268,16 @@ export default function InventoryTable({
             className="btn"
             type="button"
             disabled={busy || selectedSkus.length === 0}
+            onClick={createSaleFromSelected}
+          >
+            Create sale ({selectedSkus.length})
+          </button>
+
+          <button
+            className="btn"
+            type="button"
+            disabled={busy || selectedSkus.length === 0}
             onClick={archiveSelected}
-            style={{ opacity: busy || selectedSkus.length === 0 ? 0.6 : 1 }}
           >
             {busy ? "Working..." : `Archive selected (${selectedSkus.length})`}
           </button>
@@ -278,24 +308,10 @@ export default function InventoryTable({
               <th className="th" style={{ width: 44 }}>
                 <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
-
               <th className="th" style={{ width: 170 }}>
                 SKU
               </th>
               <th className="th">Title</th>
-
-              <th className="th" style={{ width: 160 }}>
-                Purchased From
-              </th>
-              <th className="th" style={{ width: 170 }}>
-                Purchase Ref
-              </th>
-              <th className="th" style={{ width: 140 }}>
-                Brand
-              </th>
-              <th className="th" style={{ width: 120 }}>
-                Size
-              </th>
               <th className="th" style={{ width: 150 }}>
                 Status
               </th>
@@ -304,15 +320,6 @@ export default function InventoryTable({
               </th>
               <th className="th" style={{ width: 120 }}>
                 Cost
-              </th>
-              <th className="th" style={{ width: 140 }}>
-                Break-even
-              </th>
-              <th className="th" style={{ width: 170 }}>
-                Recommended
-              </th>
-              <th className="th" style={{ width: 170 }}>
-                Created
               </th>
               <th className="th" style={{ width: 160, textAlign: "right" }}>
                 Actions
@@ -323,8 +330,8 @@ export default function InventoryTable({
           <tbody>
             {items.map((it) => (
               <tr
-                className="tr rowClick"
                 key={it.sku}
+                className="tr rowClick"
                 style={it.pricingAlert ? { backgroundColor: "rgba(245, 158, 11, 0.1)" } : {}}
                 onClick={() => router.push(skuHref(it.sku))}
               >
@@ -336,46 +343,53 @@ export default function InventoryTable({
                   />
                 </td>
 
-                <td className="td">{it.sku}</td>
-                <td className="td titleCell">
-                  {it.titleOverride ?? <span className="muted">—</span>}
+                <td className="td">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void copySkuToClipboard(it.sku);
+                    }}
+                    title="Click to copy SKU"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      margin: 0,
+                      font: "inherit",
+                      color: "inherit",
+                      cursor: "copy",
+                      textAlign: "left",
+                    }}
+                  >
+                    {it.sku}
+                  </button>
                 </td>
 
-                <td className="td">
-                  {it.purchasedFrom ? it.purchasedFrom : <span className="muted">—</span>}
-                </td>
-                <td className="td">
-                  {it.purchaseRef ? it.purchaseRef : <span className="muted">—</span>}
-                </td>
-                <td className="td">{it.brand ? it.brand : <span className="muted">—</span>}</td>
-                <td className="td">{it.size ? it.size : <span className="muted">—</span>}</td>
+                <td className="td titleCell">{it.titleOverride ?? "—"}</td>
 
                 <td className="td">
                   <span className={`badge ${it.status}`}>{formatStatus(it.status)}</span>
-                  {it.pricingAlert && (
-                    <div className="muted" style={{ marginTop: 4, fontSize: 12 }}>
-                      Markdown due ({it.markdownPct}% suggested)
-                    </div>
-                  )}
                 </td>
 
-                <td className="td">{it.location?.code ?? <span className="muted">—</span>}</td>
+                <td className="td">{it.location?.code ?? "—"}</td>
                 <td className="td">{moneyGBP(it.purchaseCost)}</td>
-                <td className="td">{moneyGBP(it.breakEvenPrice)}</td>
-                <td className="td">
-                  {moneyGBP(it.recommendedPrice)}
-                  <div className="muted" style={{ fontSize: 12 }}>
-                    Margin {it.targetMarginPct}%
-                  </div>
-                </td>
-                <td className="td">{isoDateTime(it.createdAt)}</td>
 
                 <td
                   className="td"
                   style={{ textAlign: "right" }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="actions">
+                  <div
+                    className="actions"
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      flexWrap: "nowrap",
+                    }}
+                  >
                     <button
                       className="iconBtn"
                       title="Edit"
@@ -436,7 +450,7 @@ export default function InventoryTable({
 
             {items.length === 0 && (
               <tr className="tr">
-                <td className="td muted" colSpan={14}>
+                <td className="td muted" colSpan={7}>
                   No matching items.
                 </td>
               </tr>

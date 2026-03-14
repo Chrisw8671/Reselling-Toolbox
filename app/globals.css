@@ -1,3 +1,4 @@
+/* app/globals.css */
 :root {
   --bg: #f4f7fb;
   --panel: #ffffff;
@@ -12,6 +13,9 @@
   --success: #16a34a;
   --shadow-sm: 0 2px 8px rgba(2, 6, 23, 0.05);
   --shadow-md: 0 8px 24px rgba(2, 6, 23, 0.08);
+
+  /* consistent control height */
+  --control-h: 40px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,12 +47,7 @@ body {
   min-height: 100%;
   background: radial-gradient(circle at top, var(--panel-2) 0, var(--bg) 45%);
   color: var(--text);
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -90,14 +89,15 @@ a {
   color: #f8fafc;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  padding: 10px 14px;
+
+  height: var(--control-h);
+  padding: 0 14px;
   font-size: 14px;
   font-weight: 650;
   line-height: 1;
+
   cursor: pointer;
-  transition:
-    transform 0.12s ease,
-    filter 0.15s ease;
+  transition: transform 0.12s ease, filter 0.15s ease;
 }
 
 .btn:hover {
@@ -174,7 +174,8 @@ a {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .iconBtn {
@@ -211,12 +212,10 @@ a {
   gap: 10px;
 }
 
-/* ✅ NEW: hide mobile logo on desktop by default */
 .navMobile {
   display: none;
 }
 
-/* keep desktop elements visible by default */
 .navDesktop {
   display: flex;
 }
@@ -338,12 +337,23 @@ textarea {
   display: block;
   width: 100%;
   margin-top: 6px;
-  padding: 10px 12px;
+
+  height: var(--control-h);
+  padding: 0 12px;
+  line-height: 1;
+
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
   outline: none;
+}
+
+textarea {
+  min-height: calc(var(--control-h) * 2);
+  height: auto;
+  padding: 10px 12px;
+  line-height: 1.35;
 }
 
 input:focus,
@@ -459,6 +469,87 @@ h3 {
   text-overflow: ellipsis;
 }
 
+/* -------- Inventory bulk bar (responsive) -------- */
+.bulkBar {
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  grid-template-areas: "summary core final";
+  gap: 12px;
+  padding: 12px;
+  align-items: start;
+}
+
+.bulkSummary {
+  grid-area: summary;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.bulkCore {
+  grid-area: core;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.bulkFinal {
+  grid-area: final;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.bulkGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bulkGroup label {
+  margin: 0;
+}
+
+.bulkGroup input,
+.bulkGroup select {
+  margin-top: 0;
+}
+
+.bulkPair {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* Keep button text intact */
+.bulkFinal .btn,
+.bulkPair .btn {
+  white-space: nowrap;
+}
+
+/* ✅ Key behavior:
+   When narrower, keep summary on the left,
+   move core to the right, and push final actions below (right aligned). */
+@media (max-width: 1000px) {
+  .bulkBar {
+    grid-template-columns: max-content 1fr;
+    grid-template-areas:
+      "summary core"
+      "summary final";
+    align-items: start;
+  }
+
+  .bulkFinal {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 900px) {
   .chartsGrid {
     grid-template-columns: 1fr;
@@ -467,9 +558,6 @@ h3 {
   .chartBox {
     height: 220px;
   }
-
-  /* ✅ REMOVED: this was hiding .navDesktop on tablets/desktop */
-  /* .navDesktop { display: none; } */
 }
 
 @media (max-width: 768px) {
@@ -482,7 +570,6 @@ h3 {
     display: none;
   }
 
-  /* ✅ Hide desktop logo/nav and show mobile logo */
   .navDesktop {
     display: none !important;
   }
@@ -518,6 +605,7 @@ h3 {
   .btn {
     width: 100%;
     min-height: 44px;
+    height: auto;
   }
 
   .tableWrap {

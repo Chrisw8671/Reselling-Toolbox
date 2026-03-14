@@ -100,8 +100,7 @@ export default async function InventoryDetailPage({ params }: Props) {
     <div className="container">
       <div className="toolbar">
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Mobile Inventory Item</h1>
-          <div className="muted" style={{ marginTop: 4 }}>SKU: {itemPlain.sku}</div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Item: {itemPlain.sku}</h1>
         </div>
       </div>
 

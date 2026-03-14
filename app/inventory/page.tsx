@@ -1,3 +1,4 @@
+// app/inventory/page.tsx
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import InventoryTable from "@/components/InventoryTable";
@@ -21,7 +22,8 @@ type Props = {
     listed_on_any?: string;
     listed_on_count_min?: string;
     needs_price_review?: string;
-    filters?: string; // ✅ added
+    filters?: string;
+    page?: string;
   }>;
 };
 
@@ -31,16 +33,10 @@ function isStockStatus(v: string): v is StockStatus {
   return STATUSES.includes(v as StockStatus);
 }
 
-// Accepts either "25" meaning 25% OR "0.25" meaning 25%.
-// Returns a percent number like 25.
 function normalizeMarginPct(v: unknown, fallbackPct = 25) {
   const n = typeof v === "number" ? v : Number(v);
   if (!Number.isFinite(n)) return fallbackPct;
-
-  // if stored as fraction (0..1), convert to percent
   if (n > 0 && n <= 1) return n * 100;
-
-  // if already percent (1..100+), keep
   return n;
 }
 
@@ -48,13 +44,22 @@ export default async function InventoryPage({ searchParams }: Props) {
   const sp = (await searchParams) ?? {};
   const q = (sp.q ?? "").trim();
   const statusParam = (sp.status ?? "").trim();
-  const inStock = (sp.in_stock ?? "") === "1";
+
+  // Default to IN_STOCK when param is missing
+  const inStockParam = (sp.in_stock ?? "").trim();
+  const inStock = inStockParam === "" ? true : inStockParam === "1";
+
   const platform = (sp.platform ?? "").trim();
   const listedOnAny = (sp.listed_on_any ?? "") === "1";
   const listedOnCountMin = Number(sp.listed_on_count_min ?? "");
   const ageMin = Number.parseInt((sp.age_min ?? "").trim(), 10);
   const needsPriceReview = (sp.needs_price_review ?? "") === "1";
   const filtersOpen = (sp.filters ?? "") === "1";
+
+  // pagination
+  const PAGE_SIZE = 100;
+  const pageParam = Number.parseInt((sp.page ?? "1").trim(), 10);
+  const requestedPage = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
   const status: StockStatus | "" = inStock
     ? "IN_STOCK"
@@ -98,7 +103,6 @@ export default async function InventoryPage({ searchParams }: Props) {
       some: { platform: { equals: platform, mode: "insensitive" } },
     };
   } else if (listedOnAny) {
-    // "exists any listing"
     where.listings = { some: { id: { not: "" } } };
   }
 
@@ -116,10 +120,17 @@ export default async function InventoryPage({ searchParams }: Props) {
     ];
   }
 
+  // count for pagination
+  const totalMatching = await prisma.stockUnit.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalMatching / PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+  const skip = (page - 1) * PAGE_SIZE;
+
   const items = await prisma.stockUnit.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    take: 300,
+    skip,
+    take: PAGE_SIZE,
     select: {
       sku: true,
       titleOverride: true,
@@ -151,8 +162,6 @@ export default async function InventoryPage({ searchParams }: Props) {
   const itemsPlain = filteredByCount.map((it) => {
     const purchaseCost = Number(it.purchaseCost);
     const extraCost = Number(it.extraCost ?? 0);
-
-    // ✅ Robust handling (25 vs 0.25)
     const targetMarginPct = normalizeMarginPct(it.targetMarginPct, 25);
 
     const ageDays = getInventoryAgeDays(it.purchasedAt);
@@ -211,6 +220,7 @@ export default async function InventoryPage({ searchParams }: Props) {
 
   const statuses = ["", "IN_STOCK", "LISTED", "SOLD", "RETURNED", "WRITTEN_OFF"];
 
+  // Base QS for links (filters + pagination)
   const qsBase = new URLSearchParams();
   if (q) qsBase.set("q", q);
   if (statusParam && !inStock) qsBase.set("status", statusParam);
@@ -221,20 +231,52 @@ export default async function InventoryPage({ searchParams }: Props) {
     qsBase.set("listed_on_count_min", String(listedOnCountMin));
   }
   if (needsPriceReview) qsBase.set("needs_price_review", "1");
+  if (filtersOpen) qsBase.set("filters", "1");
+  if (inStockParam !== "") qsBase.set("in_stock", inStockParam);
 
   const openFiltersHref = `/inventory?${new URLSearchParams({
     ...Object.fromEntries(qsBase),
     filters: "1",
   }).toString()}`;
 
-  const closeFiltersHref = qsBase.toString() ? `/inventory?${qsBase.toString()}` : "/inventory";
+  const closeFiltersHref = (() => {
+    const qs = new URLSearchParams(Object.fromEntries(qsBase));
+    qs.delete("filters");
+    qs.delete("page");
+    return qs.toString() ? `/inventory?${qs.toString()}` : "/inventory";
+  })();
 
-  const inStockOnHref = `/inventory?${new URLSearchParams({
-    ...Object.fromEntries(qsBase),
-    in_stock: "1",
-  }).toString()}`;
+  const inStockOnHref = (() => {
+    const qs = new URLSearchParams(Object.fromEntries(qsBase));
+    qs.set("in_stock", "1");
+    qs.delete("page");
+    return `/inventory?${qs.toString()}`;
+  })();
 
-  const inStockOffHref = qsBase.toString() ? `/inventory?${qsBase.toString()}` : "/inventory";
+  const inStockOffHref = (() => {
+    const qs = new URLSearchParams(Object.fromEntries(qsBase));
+    qs.set("in_stock", "0");
+    qs.delete("page");
+    return `/inventory?${qs.toString()}`;
+  })();
+
+  function pageHref(p: number) {
+    const qs = new URLSearchParams(Object.fromEntries(qsBase));
+    if (p <= 1) qs.delete("page");
+    else qs.set("page", String(p));
+    return qs.toString() ? `/inventory?${qs.toString()}` : "/inventory";
+  }
+
+  const pageNumbers = (() => {
+    if (totalPages <= 1) return [];
+    const set = new Set<number>();
+    set.add(1);
+    set.add(totalPages);
+    for (let p = page - 2; p <= page + 2; p++) {
+      if (p >= 1 && p <= totalPages) set.add(p);
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  })();
 
   return (
     <div className="container">
@@ -242,7 +284,8 @@ export default async function InventoryPage({ searchParams }: Props) {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Inventory</h1>
           <div className="muted" style={{ marginTop: 4 }}>
-            {itemsPlain.length} item(s)
+            Showing {itemsPlain.length} of {totalMatching} item(s)
+            {totalPages > 1 ? ` • Page ${page} of ${totalPages}` : ""}
             {(q || status || safeAgeMin || needsPriceReview) && (
               <>
                 {" "}
@@ -267,166 +310,218 @@ export default async function InventoryPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
-        <form
-          action="/inventory"
-          method="get"
+<div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+  <form action="/inventory" method="get">
+    {/* ✅ Search row: input + Filters + Search all on ONE LINE */}
+    <div
+      style={{
+        display: "grid",
+        gap: 12,
+        alignItems: "end",
+        gridTemplateColumns: "1fr max-content max-content",
+      }}
+    >
+      <label style={{ margin: 0 }}>
+        Search (SKU, title, location, purchase info)
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
+          style={{ width: "100%" }}
+        />
+      </label>
+
+      <Link className="btn" href={filtersOpen ? closeFiltersHref : openFiltersHref}>
+        {filtersOpen ? "Close" : "Filters"}
+      </Link>
+
+      {!filtersOpen ? (
+        <button className="btn" type="submit">
+          Search
+        </button>
+      ) : (
+        <span />
+      )}
+    </div>
+
+    {/* Keep filters open state */}
+    {filtersOpen && <input type="hidden" name="filters" value="1" />}
+
+    {/* Clear button (only when filters are closed, and you have something to clear) */}
+    {!filtersOpen && (q || (sp.page ?? "").trim()) && (
+      <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+        <Link className="btn" href="/inventory">
+          Clear
+        </Link>
+      </div>
+    )}
+
+    {/* ✅ Filters section (unchanged from your current version) */}
+    {filtersOpen && (
+      <div className="inlineControls" style={{ marginTop: 12 }}>
+        <label style={{ width: 220 }}>
+          Age (days min)
+          <input
+            name="age_min"
+            type="number"
+            min={1}
+            step={1}
+            defaultValue={safeAgeMin ?? ""}
+            placeholder="e.g. 90"
+            style={{ width: "100%" }}
+          />
+        </label>
+
+        <label style={{ width: 220 }}>
+          Status
+          <select
+            name="status"
+            defaultValue={statusParam}
+            style={{ width: "100%" }}
+            disabled={inStock}
+            title={inStock ? "Turn off In Stock only to change status filter" : undefined}
+          >
+            {statuses.map((s) => (
+              <option key={s} value={s}>
+                {s ? formatStatus(s) : "All"}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ width: 220 }}>
+          Platform
+          <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
+            <option value="">Any</option>
+            {platformOptions.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ width: 180 }}>
+          Listed on any
+          <select
+            name="listed_on_any"
+            defaultValue={listedOnAny ? "1" : "0"}
+            style={{ width: "100%" }}
+          >
+            <option value="0">No filter</option>
+            <option value="1">Yes</option>
+          </select>
+        </label>
+
+        <label style={{ width: 220 }}>
+          Min listing count
+          <input
+            type="number"
+            min={0}
+            name="listed_on_count_min"
+            defaultValue={
+              Number.isFinite(listedOnCountMin) && listedOnCountMin > 0 ? listedOnCountMin : ""
+            }
+            placeholder="e.g. 2"
+            style={{ width: "100%" }}
+          />
+        </label>
+
+        <label
           style={{
             display: "flex",
-            gap: 12,
-            flexWrap: "wrap",
-            alignItems: "end",
+            alignItems: "center",
+            gap: 8,
+            paddingBottom: 2,
+            cursor: "pointer",
+            margin: 0,
           }}
         >
-          <label style={{ flex: "1 1 280px" }}>
-            Search (SKU, title, location, purchase info)
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <input
-                  name="q"
-                  defaultValue={q}
-                  placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
-                  style={{ width: "100%" }}
-                />
+          <input
+            type="checkbox"
+            name="needs_price_review"
+            value="1"
+            defaultChecked={needsPriceReview}
+            style={{ width: 18, height: 18 }}
+          />
+          Needs price review
+        </label>
+
+        {inStock && <input type="hidden" name="in_stock" value="1" />}
+
+        <button className="btn" type="submit">
+          Apply
+        </button>
+
+        {(q ||
+          statusParam ||
+          inStockParam ||
+          safeAgeMin ||
+          platform ||
+          listedOnAny ||
+          (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) ||
+          needsPriceReview) && (
+          <Link className="btn" href="/inventory">
+            Clear
+          </Link>
+        )}
+      </div>
+    )}
+  </form>
+</div>
+
+      <InventoryTable
+        items={itemsPlain}
+        quickAction={safeAgeMin && safeAgeMin >= 90 ? "MARKDOWN_15" : null}
+      />
+
+      {totalPages > 1 && (
+        <div
+          className="tableWrap"
+          style={{
+            padding: 12,
+            marginTop: 12,
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            justifyContent: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <Link className="btn" href={pageHref(Math.max(1, page - 1))} aria-disabled={page <= 1}>
+            ← Prev
+          </Link>
+
+          {pageNumbers.map((p, idx) => {
+            const prev = pageNumbers[idx - 1];
+            const needsEllipsis = idx > 0 && prev !== undefined && p - prev > 1;
+
+            return (
+              <span key={p} style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                {needsEllipsis && <span className="muted">…</span>}
                 <Link
                   className="btn"
-                  href={filtersOpen ? closeFiltersHref : openFiltersHref}
-                  style={{ marginBottom: -5 }}
+                  href={pageHref(p)}
+                  style={{
+                    fontWeight: p === page ? 800 : 600,
+                    opacity: p === page ? 1 : 0.85,
+                  }}
                 >
-                  {filtersOpen ? "Close" : "Filters"}
+                  {p}
                 </Link>
-            </div>
-          </label>
+              </span>
+            );
+          })}
 
-          {filtersOpen && <input type="hidden" name="filters" value="1" />}
-
-          {!filtersOpen && (
-            <>
-              <button className="btn" type="submit">
-                Search
-              </button>
-
-              {q && (
-                <Link className="btn" href="/inventory">
-                  Clear
-                </Link>
-              )}
-            </>
-          )}
-
-          {filtersOpen && (
-            <>
-              <label style={{ width: 220 }}>
-                Age (days min)
-                <input
-                  name="age_min"
-                  type="number"
-                  min={1}
-                  step={1}
-                  defaultValue={safeAgeMin ?? ""}
-                  placeholder="e.g. 90"
-                  style={{ width: "100%" }}
-                />
-              </label>
-
-              <label style={{ width: 220 }}>
-                Status
-                <select
-                  name="status"
-                  defaultValue={statusParam}
-                  style={{ width: "100%" }}
-                  disabled={inStock}
-                  title={inStock ? "Turn off In Stock only to change status filter" : undefined}
-                >
-                  {statuses.map((s) => (
-                    <option key={s} value={s}>
-                      {s ? formatStatus(s) : "All"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label style={{ width: 220 }}>
-                Platform
-                <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
-                  <option value="">Any</option>
-                  {platformOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label style={{ width: 180 }}>
-                Listed on any
-                <select
-                  name="listed_on_any"
-                  defaultValue={listedOnAny ? "1" : "0"}
-                  style={{ width: "100%" }}
-                >
-                  <option value="0">No filter</option>
-                  <option value="1">Yes</option>
-                </select>
-              </label>
-
-              <label style={{ width: 220 }}>
-                Min listing count
-                <input
-                  type="number"
-                  min={0}
-                  name="listed_on_count_min"
-                  defaultValue={
-                    Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
-                      ? listedOnCountMin
-                      : ""
-                  }
-                  placeholder="e.g. 2"
-                  style={{ width: "100%" }}
-                />
-              </label>
-
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  paddingBottom: 8,
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="needs_price_review"
-                  value="1"
-                  defaultChecked={needsPriceReview}
-                />
-                Needs price review
-              </label>
-
-              {inStock && <input type="hidden" name="in_stock" value="1" />}
-
-              <button className="btn" type="submit">
-                Apply
-              </button>
-
-              {(q ||
-                statusParam ||
-                inStock ||
-                safeAgeMin ||
-                platform ||
-                listedOnAny ||
-                (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) ||
-                needsPriceReview) && (
-                <Link className="btn" href="/inventory">
-                  Clear
-                </Link>
-              )}
-            </>
-          )}
-        </form>
-      </div>
-
-      <InventoryTable items={itemsPlain} quickAction={safeAgeMin && safeAgeMin >= 90 ? "MARKDOWN_15" : null} />
+          <Link
+            className="btn"
+            href={pageHref(Math.min(totalPages, page + 1))}
+            aria-disabled={page >= totalPages}
+          >
+            Next →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
