@@ -1,23 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type SaleItem = {
   stockUnitId: string;
   sku: string;
   title: string;
-  status: string;
   loc?: string;
   purchaseCost: number;
-  salePrice: string; // keep as string for input
+  salePrice: string;
 };
 
-export default function CreateSalePage() {
+const PLATFORMS = ["Vinted", "eBay", "Depop", "Facebook Marketplace", "In Person", "Other"];
+
+export default function MobileCreateSalePage() {
+  const router = useRouter();
+
   const [platform, setPlatform] = useState("Vinted");
   const [saleDate, setSaleDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [orderRef, setOrderRef] = useState("");
-
   const [shippingCharged, setShippingCharged] = useState("0");
   const [platformFees, setPlatformFees] = useState("0");
   const [shippingCost, setShippingCost] = useState("0");
@@ -25,16 +28,16 @@ export default function CreateSalePage() {
 
   const [skuInput, setSkuInput] = useState("");
   const [items, setItems] = useState<SaleItem[]>([]);
-  const [msg, setMsg] = useState<string>("");
+  const [msg, setMsg] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function addSku() {
     setMsg("");
     const sku = skuInput.trim();
     if (!sku) return;
 
-    // prevent duplicates
     if (items.some((x) => x.sku.toUpperCase() === sku.toUpperCase())) {
-      setMsg("That Item is already added.");
+      setMsg("That item is already added.");
       return;
     }
 
@@ -42,7 +45,7 @@ export default function CreateSalePage() {
     const data = await res.json();
 
     if (!res.ok) {
-      setMsg(data.error ?? "Could not add Item");
+      setMsg(data.error ?? "Item not found");
       return;
     }
 
@@ -50,7 +53,6 @@ export default function CreateSalePage() {
       id: string;
       sku: string;
       titleOverride: string | null;
-      status: string;
       purchaseCost: number;
       location: { code: string } | null;
     };
@@ -61,29 +63,20 @@ export default function CreateSalePage() {
         stockUnitId: it.id,
         sku: it.sku,
         title: it.titleOverride ?? "—",
-        status: it.status,
         loc: it.location?.code,
         purchaseCost: Number(it.purchaseCost),
         salePrice: "",
       },
     ]);
-
     setSkuInput("");
-  }
-
-  function removeItem(stockUnitId: string) {
-    setItems((prev) => prev.filter((x) => x.stockUnitId !== stockUnitId));
   }
 
   async function saveSale() {
     setMsg("");
-
     if (items.length === 0) {
-      setMsg("Add at least one Item.");
+      setMsg("Add at least one item.");
       return;
     }
-
-    // validate prices
     for (const it of items) {
       const p = Number(it.salePrice);
       if (!Number.isFinite(p) || p < 0) {
@@ -92,6 +85,7 @@ export default function CreateSalePage() {
       }
     }
 
+    setSaving(true);
     const res = await fetch("/api/sales/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -111,85 +105,64 @@ export default function CreateSalePage() {
     });
 
     const data = await res.json();
+    setSaving(false);
+
     if (!res.ok) {
       setMsg(data.error ?? "Failed to save sale");
       return;
     }
 
-    setMsg(`Saved sale! (id: ${data.saleId})`);
-
-    // reset for next sale
-    setItems([]);
-    setOrderRef("");
-    setShippingCharged("0");
-    setPlatformFees("0");
-    setShippingCost("0");
-    setOtherCosts("0");
+    router.push(`/mobile/sales/${data.saleId}`);
   }
 
   const totalSale = items.reduce((s, it) => s + (Number(it.salePrice) || 0), 0);
 
   return (
-    <div className="container">
-      <div className="toolbar">
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Create Sale</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
-            Add items, enter prices, then save.
-          </div>
-        </div>
-
-        <Link className="btn" href="/sales">
-          ← Sales List
+    <div className="mobilePg">
+      {/* Header */}
+      <div style={{ paddingTop: 10, paddingBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+        <Link
+          href="/mobile/sales"
+          style={{ fontSize: 26, textDecoration: "none", color: "var(--text)", lineHeight: 1, flexShrink: 0 }}
+        >
+          ‹
         </Link>
+        <h1 style={{ fontSize: 26, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
+          New Sale
+        </h1>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr 1fr" }}>
+      {/* Sale details */}
+      <div className="mobileCard">
+        <div className="mobileCardTitle">Sale details</div>
+        <div className="mGrid1">
           <label>
             Platform
-            <select
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              <option value="Vinted">Vinted</option>
-              <option value="eBay">eBay</option>
-              <option value="Depop">Depop</option>
-              <option value="Facebook Marketplace">Facebook Marketplace</option>
-              <option value="In Person">In Person</option>
-              <option value="Other">Other</option>
+            <select value={platform} onChange={(e) => setPlatform(e.target.value)}>
+              {PLATFORMS.map((p) => (
+                <option key={p}>{p}</option>
+              ))}
             </select>
           </label>
-
           <label>
             Sale date
-            <input
-              type="date"
-              value={saleDate}
-              onChange={(e) => setSaleDate(e.target.value)}
-              style={{ width: "100%" }}
-            />
+            <input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
           </label>
-
           <label>
-            Order ref (optional)
+            Order reference <span style={{ fontWeight: 400, color: "var(--muted)" }}>(optional)</span>
             <input
               value={orderRef}
               onChange={(e) => setOrderRef(e.target.value)}
-              style={{ width: "100%" }}
+              placeholder="e.g. ORD-12345"
             />
           </label>
         </div>
+      </div>
 
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "1fr 1fr 1fr 1fr",
-            marginTop: 12,
-          }}
-        >
+      {/* Costs & fees */}
+      <div className="mobileCard">
+        <div className="mobileCardTitle">Costs & fees</div>
+        <div className="mGrid2">
           <label>
             Shipping charged
             <input
@@ -197,10 +170,8 @@ export default function CreateSalePage() {
               step="0.01"
               value={shippingCharged}
               onChange={(e) => setShippingCharged(e.target.value)}
-              style={{ width: "100%" }}
             />
           </label>
-
           <label>
             Platform fees
             <input
@@ -208,21 +179,17 @@ export default function CreateSalePage() {
               step="0.01"
               value={platformFees}
               onChange={(e) => setPlatformFees(e.target.value)}
-              style={{ width: "100%" }}
             />
           </label>
-
           <label>
-            Shipping cost (you paid)
+            Shipping cost
             <input
               type="number"
               step="0.01"
               value={shippingCost}
               onChange={(e) => setShippingCost(e.target.value)}
-              style={{ width: "100%" }}
             />
           </label>
-
           <label>
             Other costs
             <input
@@ -230,117 +197,160 @@ export default function CreateSalePage() {
               step="0.01"
               value={otherCosts}
               onChange={(e) => setOtherCosts(e.target.value)}
-              style={{ width: "100%" }}
             />
           </label>
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16 }}>
-        <div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
-          <label style={{ flex: "1 1 280px" }}>
-            Add Item
-            <input
-              value={skuInput}
-              onChange={(e) => setSkuInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addSku();
-                }
-              }}
-              placeholder="Type/scan item SKU and press Enter"
-              style={{ width: "100%" }}
-            />
-          </label>
-
-          <button className="btn" type="button" onClick={addSku}>
-            + Add Item
-          </button>
-
-          <div className="muted" style={{ marginLeft: "auto" }}>
-            Items: {items.length} • Total sale: £{totalSale.toFixed(2)}
-          </div>
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <table className="table">
-            <thead className="thead">
-              <tr>
-                <th className="th" style={{ width: 160 }}>
-                  Item SKU
-                </th>
-                <th className="th">Title</th>
-                <th className="th" style={{ width: 90 }}>
-                  Loc
-                </th>
-                <th className="th" style={{ width: 130 }}>
-                  Buy cost
-                </th>
-                <th className="th" style={{ width: 150 }}>
-                  Sale price
-                </th>
-                <th className="th" style={{ width: 90, textAlign: "right" }}>
-                  Remove
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((it) => (
-                <tr className="tr" key={it.stockUnitId}>
-                  <td className="td">{it.sku}</td>
-                  <td className="td titleCell">{it.title}</td>
-                  <td className="td">{it.loc ?? <span className="muted">—</span>}</td>
-                  <td className="td">£{it.purchaseCost.toFixed(2)}</td>
-                  <td className="td">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={it.salePrice}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setItems((prev) =>
-                          prev.map((x) =>
-                            x.stockUnitId === it.stockUnitId ? { ...x, salePrice: v } : x,
-                          ),
-                        );
-                      }}
-                      style={{ width: "100%" }}
-                    />
-                  </td>
-                  <td className="td" style={{ textAlign: "right" }}>
-                    <button
-                      className="iconBtn"
-                      type="button"
-                      onClick={() => removeItem(it.stockUnitId)}
-                      title="Remove"
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {items.length === 0 && (
-                <tr className="tr">
-                  <td className="td muted" colSpan={6}>
-                    No items added yet. Type a item SKU above and press Enter.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
+      {/* Items */}
+      <div className="mobileCard">
         <div
-          style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 14 }}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 14,
+          }}
         >
-          <button className="btn" type="button" onClick={saveSale}>
-            Save Sale
+          <div className="mobileCardTitle" style={{ margin: 0 }}>
+            Items
+          </div>
+          {items.length > 0 && (
+            <div style={{ fontSize: 15, fontWeight: 800 }}>£{totalSale.toFixed(2)}</div>
+          )}
+        </div>
+
+        {/* SKU input */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          <input
+            value={skuInput}
+            onChange={(e) => setSkuInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addSku();
+              }
+            }}
+            placeholder="Scan or type item SKU"
+            style={{ flex: 1, marginTop: 0 }}
+            autoComplete="off"
+            autoCapitalize="characters"
+          />
+          <button
+            className="btn"
+            type="button"
+            onClick={addSku}
+            style={{ flexShrink: 0, height: 40, padding: "0 16px", width: "auto", minHeight: 0 }}
+          >
+            Add
           </button>
         </div>
 
-        {msg && <div style={{ marginTop: 12 }}>{msg}</div>}
+        {/* Item cards */}
+        <div style={{ display: "grid", gap: 10 }}>
+          {items.length === 0 && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "16px",
+                color: "var(--muted)",
+                fontSize: 13,
+                border: "1px dashed var(--border)",
+                borderRadius: 10,
+              }}
+            >
+              No items added yet
+            </div>
+          )}
+          {items.map((it) => (
+            <div key={it.stockUnitId} className="saleItemCard">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 14,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {it.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                    {it.sku}
+                    {it.loc ? ` · ${it.loc}` : ""} · Cost £{it.purchaseCost.toFixed(2)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setItems((prev) => prev.filter((x) => x.stockUnitId !== it.stockUnitId))
+                  }
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--danger)",
+                    fontSize: 20,
+                    padding: "0 0 0 4px",
+                    lineHeight: 1,
+                    flexShrink: 0,
+                  }}
+                  aria-label="Remove item"
+                >
+                  ×
+                </button>
+              </div>
+              <label style={{ marginTop: 8, marginBottom: 0 }}>
+                <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
+                  Sale price (£)
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={it.salePrice}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setItems((prev) =>
+                      prev.map((x) =>
+                        x.stockUnitId === it.stockUnitId ? { ...x, salePrice: v } : x,
+                      ),
+                    );
+                  }}
+                  placeholder="0.00"
+                  style={{ marginTop: 4 }}
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+
+        {msg && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: "10px 12px",
+              borderRadius: 10,
+              background: "color-mix(in srgb, var(--danger) 10%, var(--panel))",
+              color: "var(--danger)",
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            {msg}
+          </div>
+        )}
+
+        <button
+          className="btn primary"
+          type="button"
+          onClick={saveSale}
+          disabled={saving}
+          style={{ width: "100%", marginTop: 16, minHeight: 50, fontSize: 15, fontWeight: 800 }}
+        >
+          {saving ? "Saving…" : `Save Sale${items.length > 0 ? ` · £${totalSale.toFixed(2)}` : ""}`}
+        </button>
       </div>
     </div>
   );

@@ -11,10 +11,11 @@ const links = [
   { href: "/reports", label: "Reports"},
 ];
 const mobilelinks = [
-  { href: "/mobile/inventory", label: "Inventory"},
-  { href: "/mobile/sales", label: "Sales"},
-  { href: "/mobile/report", label: "Report"},
-  { href: "/mobile/wishlist", label: "Watch"},
+  { href: "/mobile", label: "Home", icon: "⌂", exact: true },
+  { href: "/mobile/inventory", label: "Stock", icon: "📦" },
+  { href: "/mobile/sales", label: "Sales", icon: "🧾" },
+  { href: "/mobile/report", label: "Report", icon: "📊" },
+  { href: "/mobile/settings", label: "More", icon: "⋯" },
 ];
 
 function AccountIcon({ size = 22 }: { size?: number }) {
@@ -140,15 +141,19 @@ export default function Navbar() {
       </header>
 
       <nav className="mobileBottomNav" aria-label="Primary">
-        {mobilelinks.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={isActive(l.href) ? "bottomActive" : ""}
-          >
-            {l.label}
-          </Link>
-        ))}
+        {mobilelinks.map((l) => {
+          const active = l.exact ? pathname === l.href : isActive(l.href);
+          return (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={active ? "bottomActive" : ""}
+            >
+              <span className="navTabIcon">{l.icon}</span>
+              {l.label}
+            </Link>
+          );
+        })}
       </nav>
     </>
   );

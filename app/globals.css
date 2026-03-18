@@ -20,19 +20,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #090d16;
-    --panel: #111827;
-    --panel-2: #1c2536;
-    --panel-3: #232f45;
+    --bg: #000000;
+    --panel: #1a1a1a;
+    --panel-2: #0f0f0f;
+    --panel-3: #121212;
     --text: #e6edf7;
     --muted: #9baccc;
-    --border: #2b3953;
+    --border: #333333;
     --accent: #60a5fa;
-    --accent-soft: #1d3557;
+    --accent-soft: #1e3a5e;
     --danger: #ef4444;
     --success: #4ade80;
-    --shadow-sm: 0 3px 12px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 16px 30px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 2px 8px rgba(96, 165, 250, 0.1);
+    --shadow-md: 0 8px 16px rgba(96, 165, 250, 0.15);
   }
 }
 
@@ -45,7 +45,7 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: radial-gradient(circle at top, var(--panel-2) 0, var(--bg) 45%);
+  background: var(--bg);
   color: var(--text);
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -285,7 +285,7 @@ a {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(2, 8, 23, 0.45);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: flex-end;
 }
@@ -450,7 +450,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(2, 8, 23, 0.55);
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .modalCard {
@@ -641,33 +641,311 @@ h3 {
     right: 0;
     z-index: 140;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
-    background: color-mix(in srgb, var(--panel) 95%, transparent);
-    backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--panel) 96%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   .mobileBottomNav a {
-    display: inline-flex;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    padding: 8px 4px;
+    gap: 3px;
+    min-height: 48px;
+    padding: 6px 2px;
     border-radius: 10px;
     text-decoration: none;
     text-align: center;
-    font-size: 12px;
+    font-size: 10px;
     line-height: 1.1;
     font-weight: 700;
     color: var(--muted);
     border: 1px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    transition: color 0.15s;
+  }
+
+  .mobileBottomNav a .navTabIcon {
+    font-size: 21px;
+    line-height: 1;
   }
 
   .mobileBottomNav a.bottomActive {
-    color: var(--text);
-    background: var(--panel-3);
-    border-color: var(--border);
+    color: var(--accent);
   }
+}
+
+/* ─── Mobile page wrapper ─── */
+.mobilePg {
+  padding: 0 14px;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* ─── Mobile stat tiles ─── */
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.statTile {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(160deg, var(--panel) 0%, var(--panel-2) 100%);
+  box-shadow: var(--shadow-sm);
+}
+
+.statTile.wide {
+  grid-column: 1 / -1;
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+/* ─── Quick action grid ─── */
+.actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.actionTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, var(--panel) 0%, var(--panel-2) 100%);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s, opacity 0.1s;
+}
+
+.actionTile:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+.actionIcon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* ─── Mobile inventory item card ─── */
+.mobileItemCard {
+  display: flex;
+  align-items: stretch;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.1s;
+}
+
+.mobileItemCard:active {
+  opacity: 0.8;
+}
+
+.mobileItemAccent {
+  width: 4px;
+  flex-shrink: 0;
+  border-radius: 0;
+}
+
+.mobileItemBody {
+  flex: 1;
+  padding: 11px 12px;
+  min-width: 0;
+}
+
+.mobileItemChevron {
+  display: flex;
+  align-items: center;
+  padding: 0 12px 0 4px;
+  color: var(--muted);
+  font-size: 20px;
+  font-weight: 300;
+}
+
+/* ─── Status pill ─── */
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ─── Filter chip row ─── */
+.chipRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  margin-bottom: 12px;
+  scrollbar-width: none;
+}
+
+.chipRow::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: background 0.12s, color 0.12s;
+}
+
+.chip.chipActive {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+}
+
+/* ─── Mobile search bar ─── */
+.mobileSearchBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.mobileSearchBar input {
+  flex: 1;
+  margin-top: 0;
+  height: 42px;
+  border-radius: 12px;
+}
+
+.mobileSearchBar button,
+.mobileSearchBar a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--panel-3);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Mobile sale card ─── */
+.mobileSaleCard {
+  display: block;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 13px 14px;
+  box-shadow: var(--shadow-sm);
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.1s;
+}
+
+.mobileSaleCard:active {
+  opacity: 0.8;
+}
+
+/* ─── Mobile card wrapper ─── */
+.mobileCard {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.mobileCardTitle {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* ─── Mobile form grids ─── */
+.mGrid1 {
+  display: grid;
+  gap: 12px;
+}
+
+.mGrid2 {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ─── Mobile sale item card (create-sale) ─── */
+.saleItemCard {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+  padding: 12px;
+}
+
+/* ─── Mobile page section label ─── */
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+/* ─── Primary button variant ─── */
+.btn.primary {
+  background: linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 78%, #000) 100%);
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
 }

@@ -12,33 +12,50 @@ export default async function MobileAccountPage() {
   ]);
 
   return (
-    <div className="container" style={{ maxWidth: 560, paddingBottom: 24 }}>
-      <div className="toolbar">
-        <div>
-          <h1 style={{ fontSize: 24, margin: 0 }}>Account</h1>
-          <div className="muted" style={{ marginTop: 4 }}>Operational snapshot tied to your data.</div>
+    <div className="mobilePg">
+      <div style={{ paddingTop: 10, paddingBottom: 16 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
+          Account
+        </h1>
+        <div style={{ marginTop: 4, fontSize: 13, color: "var(--muted)" }}>
+          Operational snapshot
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: 10 }}>
-        <div className="tableWrap" style={{ padding: 14 }}>
-          <div className="muted" style={{ fontSize: 12 }}>Total sales records</div>
-          <div style={{ fontSize: 24, fontWeight: 800 }}>{salesCount}</div>
-        </div>
-        <div className="tableWrap" style={{ padding: 14 }}>
-          <div className="muted" style={{ fontSize: 12 }}>Total inventory records</div>
-          <div style={{ fontSize: 24, fontWeight: 800 }}>{stockCount}</div>
-        </div>
-        <div className="tableWrap" style={{ padding: 14 }}>
-          <div className="muted" style={{ fontSize: 12 }}>Latest sale</div>
-          <div style={{ fontWeight: 700, marginTop: 2 }}>
-            {lastSale
-              ? `${lastSale.platform || "Unknown"} • ${new Date(lastSale.saleDate).toLocaleDateString()}`
-              : "No sales yet"}
+      <div className="statGrid">
+        <div className="statTile">
+          <div className="statLabel">Sales records</div>
+          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+            {salesCount}
           </div>
-          {lastSale?.orderRef ? (
-            <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>Order {lastSale.orderRef}</div>
-          ) : null}
+        </div>
+        <div className="statTile">
+          <div className="statLabel">Inventory records</div>
+          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+            {stockCount}
+          </div>
+        </div>
+        <div className="statTile wide">
+          <div className="statLabel">Latest sale</div>
+          {lastSale ? (
+            <>
+              <div style={{ fontWeight: 800, fontSize: 16, marginTop: 4 }}>
+                {lastSale.platform || "Unknown"}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3 }}>
+                {new Date(lastSale.saleDate).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+                {lastSale.orderRef ? ` · ${lastSale.orderRef}` : ""}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontWeight: 700, marginTop: 4, color: "var(--muted)" }}>
+              No sales yet
+            </div>
+          )}
         </div>
       </div>
     </div>

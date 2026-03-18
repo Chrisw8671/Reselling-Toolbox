@@ -125,144 +125,162 @@ export default async function SaleDetailPage({ params }: Props) {
   const profit = revenue - costs;
 
   return (
-    <div className="container">
-      <div className="toolbar">
-        <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Sale</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
-            {sale.platform} • {sale.saleDate.toLocaleDateString()} •{" "}
-            {sale.orderRef ?? "—"} •{" "}
-            {FULFILLMENT_LABEL[sale.fulfillmentStatus as FulfillmentStatus]}
-            {sale.archivedAt ? " • Archived" : ""}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <SaleArchiveButton saleId={sale.id} archived={!!sale.archivedAt} />
-
-          <Link className="btn" href="/sales">
-            ← Sales
+    <div className=”mobilePg”>
+      {/* Header */}
+      <div style={{ paddingTop: 10, paddingBottom: 14 }}>
+        <div style={{ display: “flex”, alignItems: “center”, gap: 10, marginBottom: 6 }}>
+          <Link
+            href=”/mobile/sales”
+            style={{ fontSize: 26, textDecoration: “none”, color: “var(--text)”, lineHeight: 1, flexShrink: 0 }}
+          >
+            ‹
           </Link>
+          <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, letterSpacing: “-0.3px” }}>
+            {sale.platform || “Sale”}
+          </h1>
+        </div>
+        <div style={{ fontSize: 13, color: “var(--muted)”, paddingLeft: 36 }}>
+          {sale.saleDate.toLocaleDateString(“en-GB”, { day: “numeric”, month: “short”, year: “numeric” })}
+          {sale.orderRef ? ` · ${sale.orderRef}` : “”}
+          {“ · “}
+          {FULFILLMENT_LABEL[sale.fulfillmentStatus as FulfillmentStatus]}
+          {sale.archivedAt ? “ · Archived” : “”}
+        </div>
+        <div style={{ paddingLeft: 36, marginTop: 8 }}>
+          <SaleArchiveButton saleId={sale.id} archived={!!sale.archivedAt} />
         </div>
       </div>
 
-      <ReturnManager
-        saleId={sale.id}
-        lines={returnManagerLines}
-        existingCases={returnCases}
-      />
+      {/* Financial summary */}
+      <div className=”mobileCard”>
+        <div className=”mobileCardTitle”>Summary</div>
 
-      <SaleFulfillmentEditor
-        saleId={sale.id}
-        fulfillmentStatus={sale.fulfillmentStatus as FulfillmentStatus}
-        trackingNumber={sale.trackingNumber ?? ""}
-        carrier={sale.carrier ?? ""}
-        shippedAt={toDatetimeLocal(sale.shippedAt)}
-        deliveredAt={toDatetimeLocal(sale.deliveredAt)}
-      />
-
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+        {/* Top: profit prominent */}
         <div
           style={{
-            display: "grid",
-            gap: 10,
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            display: “flex”,
+            justifyContent: “space-between”,
+            alignItems: “center”,
+            marginBottom: 14,
+            paddingBottom: 14,
+            borderBottom: “1px solid var(--border)”,
           }}
         >
           <div>
-            <b>Items:</b> {lines.length}
-          </div>
-          <div>
-            <b>Revenue:</b> £{revenue.toFixed(2)}
-          </div>
-          <div>
-            <b>Profit:</b>{" "}
-            <span className={`badge ${profit >= 0 ? "profitPos" : "profitNeg"}`}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: “var(--muted)”, textTransform: “uppercase”, letterSpacing: “0.4px” }}>
+              Profit
+            </div>
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 900,
+                letterSpacing: “-0.5px”,
+                color: profit >= 0 ? “var(--success)” : “var(--danger)”,
+              }}
+            >
               £{profit.toFixed(2)}
-            </span>
+            </div>
           </div>
-
-          <div>
-            <b>Items total:</b> £{itemsTotal.toFixed(2)}
-          </div>
-          <div>
-            <b>Shipping charged:</b> £{shippingCharged.toFixed(2)}
-          </div>
-          <div>
-            <b>Purchase total:</b> £{purchaseTotal.toFixed(2)}
-          </div>
-
-          <div>
-            <b>Platform fees:</b> £{platformFees.toFixed(2)}
-          </div>
-          <div>
-            <b>Shipping cost:</b> £{shippingCost.toFixed(2)}
-          </div>
-          <div>
-            <b>Other costs:</b> £{otherCosts.toFixed(2)}
-          </div>
-          <div>
-            <b>Refunds:</b> £{refundAmount.toFixed(2)}
-          </div>
-          <div>
-            <b>Return shipping:</b> £{returnShippingCost.toFixed(2)}
+          <div style={{ textAlign: “right” }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: “var(--muted)”, textTransform: “uppercase”, letterSpacing: “0.4px” }}>
+              Revenue
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: “-0.3px” }}>
+              £{revenue.toFixed(2)}
+            </div>
           </div>
         </div>
 
+        {/* Detail grid: 2 cols */}
+        <div style={{ display: “grid”, gridTemplateColumns: “1fr 1fr”, gap: “8px 16px” }}>
+          {[
+            [“Items”, lines.length],
+            [“Items total”, `£${itemsTotal.toFixed(2)}`],
+            [“Shipping charged”, `£${shippingCharged.toFixed(2)}`],
+            [“Purchase total”, `£${purchaseTotal.toFixed(2)}`],
+            [“Platform fees”, `£${platformFees.toFixed(2)}`],
+            [“Shipping cost”, `£${shippingCost.toFixed(2)}`],
+            [“Other costs”, `£${otherCosts.toFixed(2)}`],
+            [“Refunds”, `£${refundAmount.toFixed(2)}`],
+            [“Return shipping”, `£${returnShippingCost.toFixed(2)}`],
+          ].map(([label, value]) => (
+            <div key={String(label)}>
+              <div style={{ fontSize: 11, color: “var(--muted)”, fontWeight: 600 }}>{label}</div>
+              <div style={{ fontWeight: 700, marginTop: 1 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
         {sale.notes && (
-          <div style={{ marginTop: 12 }} className="muted">
+          <div style={{ marginTop: 12, fontSize: 13, color: “var(--muted)”, borderTop: “1px solid var(--border)”, paddingTop: 10 }}>
             {sale.notes}
           </div>
         )}
       </div>
 
-      <div className="tableWrap">
-        <table className="table">
-          <thead className="thead">
-            <tr>
-              <th className="th" style={{ width: 160 }}>
-                SKU
-              </th>
-              <th className="th">Title</th>
-              <th className="th" style={{ width: 110 }}>
-                Loc
-              </th>
-              <th className="th" style={{ width: 130 }}>
-                Buy
-              </th>
-              <th className="th" style={{ width: 130 }}>
-                Sell
-              </th>
-              <th className="th" style={{ width: 140 }}>
-                Item Profit
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((l) => (
-              <tr className="tr" key={l.sku}>
-                <td className="td">{l.sku}</td>
-                <td className="td titleCell">{l.title}</td>
-                <td className="td">{l.loc}</td>
-                <td className="td">£{l.buy.toFixed(2)}</td>
-                <td className="td">£{l.sell.toFixed(2)}</td>
-                <td className="td">
-                  <span
-                    className={`badge ${l.itemProfit >= 0 ? "profitPos" : "profitNeg"}`}
-                  >
-                    £{l.itemProfit.toFixed(2)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Fulfillment editor */}
+      <SaleFulfillmentEditor
+        saleId={sale.id}
+        fulfillmentStatus={sale.fulfillmentStatus as FulfillmentStatus}
+        trackingNumber={sale.trackingNumber ?? “”}
+        carrier={sale.carrier ?? “”}
+        shippedAt={toDatetimeLocal(sale.shippedAt)}
+        deliveredAt={toDatetimeLocal(sale.deliveredAt)}
+      />
+
+      {/* Items as cards */}
+      <div style={{ marginBottom: 14 }}>
+        <div className=”sectionLabel” style={{ marginBottom: 8 }}>
+          Items ({lines.length})
+        </div>
+        <div style={{ display: “grid”, gap: 8 }}>
+          {lines.map((l) => (
+            <div
+              key={l.sku}
+              style={{
+                border: “1px solid var(--border)”,
+                borderRadius: 12,
+                background: “var(--panel)”,
+                padding: “11px 13px”,
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{l.title}</div>
+              <div style={{ fontSize: 12, color: “var(--muted)”, marginTop: 3 }}>
+                {l.sku}
+                {l.loc !== “—“ ? ` · ${l.loc}` : “”}
+              </div>
+              <div
+                style={{
+                  marginTop: 8,
+                  display: “flex”,
+                  justifyContent: “space-between”,
+                  alignItems: “center”,
+                }}
+              >
+                <div style={{ fontSize: 13, color: “var(--muted)” }}>
+                  Buy £{l.buy.toFixed(2)} → Sell £{l.sell.toFixed(2)}
+                </div>
+                <span
+                  className={`badge ${l.itemProfit >= 0 ? “profitPos” : “profitNeg”}`}
+                  style={{ fontSize: 12 }}
+                >
+                  £{l.itemProfit.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: “var(--muted)”, marginTop: 8 }}>
+          Item profit = sell − buy. Overall profit includes all fees and costs.
+        </div>
       </div>
 
-      <div className="muted" style={{ marginTop: 12 }}>
-        Note: “Item Profit” is sell − buy. The overall profit also includes
-        fees/shipping/other costs.
-      </div>
+      {/* Returns */}
+      <ReturnManager
+        saleId={sale.id}
+        lines={returnManagerLines}
+        existingCases={returnCases}
+      />
     </div>
   );
 }
