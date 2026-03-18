@@ -93,8 +93,8 @@ export default async function SaleDetailPage({ params }: Props) {
     const sell = Number(l.salePrice);
     return {
       sku: l.stockUnit.sku,
-      title: l.stockUnit.titleOverride ?? "—",
-      loc: l.stockUnit.location?.code ?? "—",
+      title: l.stockUnit.titleOverride ?? "\u2014",
+      loc: l.stockUnit.location?.code ?? "\u2014",
       buy,
       sell,
       itemProfit: sell - buy,
@@ -116,35 +116,30 @@ export default async function SaleDetailPage({ params }: Props) {
 
   const revenue = itemsTotal + shippingCharged;
   const costs =
-    purchaseTotal +
-    platformFees +
-    shippingCost +
-    otherCosts +
-    refundAmount +
-    returnShippingCost;
+    purchaseTotal + platformFees + shippingCost + otherCosts + refundAmount + returnShippingCost;
   const profit = revenue - costs;
 
   return (
-    <div className=”mobilePg”>
+    <div className="mobilePg">
       {/* Header */}
       <div style={{ paddingTop: 10, paddingBottom: 14 }}>
-        <div style={{ display: “flex”, alignItems: “center”, gap: 10, marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <Link
-            href=”/mobile/sales”
-            style={{ fontSize: 26, textDecoration: “none”, color: “var(--text)”, lineHeight: 1, flexShrink: 0 }}
+            href="/mobile/sales"
+            style={{ fontSize: 26, textDecoration: "none", color: "var(--text)", lineHeight: 1, flexShrink: 0 }}
           >
-            ‹
+            &#x2039;
           </Link>
-          <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, letterSpacing: “-0.3px” }}>
-            {sale.platform || “Sale”}
+          <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, letterSpacing: "-0.3px" }}>
+            {sale.platform || "Sale"}
           </h1>
         </div>
-        <div style={{ fontSize: 13, color: “var(--muted)”, paddingLeft: 36 }}>
-          {sale.saleDate.toLocaleDateString(“en-GB”, { day: “numeric”, month: “short”, year: “numeric” })}
-          {sale.orderRef ? ` · ${sale.orderRef}` : “”}
-          {“ · “}
+        <div style={{ fontSize: 13, color: "var(--muted)", paddingLeft: 36 }}>
+          {sale.saleDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          {sale.orderRef ? ` \u00b7 ${sale.orderRef}` : ""}
+          {" \u00b7 "}
           {FULFILLMENT_LABEL[sale.fulfillmentStatus as FulfillmentStatus]}
-          {sale.archivedAt ? “ · Archived” : “”}
+          {sale.archivedAt ? " \u00b7 Archived" : ""}
         </div>
         <div style={{ paddingLeft: 36, marginTop: 8 }}>
           <SaleArchiveButton saleId={sale.id} archived={!!sale.archivedAt} />
@@ -152,67 +147,67 @@ export default async function SaleDetailPage({ params }: Props) {
       </div>
 
       {/* Financial summary */}
-      <div className=”mobileCard”>
-        <div className=”mobileCardTitle”>Summary</div>
+      <div className="mobileCard">
+        <div className="mobileCardTitle">Summary</div>
 
-        {/* Top: profit prominent */}
+        {/* Profit + Revenue */}
         <div
           style={{
-            display: “flex”,
-            justifyContent: “space-between”,
-            alignItems: “center”,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             marginBottom: 14,
             paddingBottom: 14,
-            borderBottom: “1px solid var(--border)”,
+            borderBottom: "1px solid var(--border)",
           }}
         >
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: “var(--muted)”, textTransform: “uppercase”, letterSpacing: “0.4px” }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.4px" }}>
               Profit
             </div>
             <div
               style={{
                 fontSize: 28,
                 fontWeight: 900,
-                letterSpacing: “-0.5px”,
-                color: profit >= 0 ? “var(--success)” : “var(--danger)”,
+                letterSpacing: "-0.5px",
+                color: profit >= 0 ? "var(--success)" : "var(--danger)",
               }}
             >
               £{profit.toFixed(2)}
             </div>
           </div>
-          <div style={{ textAlign: “right” }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: “var(--muted)”, textTransform: “uppercase”, letterSpacing: “0.4px” }}>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.4px" }}>
               Revenue
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: “-0.3px” }}>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.3px" }}>
               £{revenue.toFixed(2)}
             </div>
           </div>
         </div>
 
         {/* Detail grid: 2 cols */}
-        <div style={{ display: “grid”, gridTemplateColumns: “1fr 1fr”, gap: “8px 16px” }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
           {[
-            [“Items”, lines.length],
-            [“Items total”, `£${itemsTotal.toFixed(2)}`],
-            [“Shipping charged”, `£${shippingCharged.toFixed(2)}`],
-            [“Purchase total”, `£${purchaseTotal.toFixed(2)}`],
-            [“Platform fees”, `£${platformFees.toFixed(2)}`],
-            [“Shipping cost”, `£${shippingCost.toFixed(2)}`],
-            [“Other costs”, `£${otherCosts.toFixed(2)}`],
-            [“Refunds”, `£${refundAmount.toFixed(2)}`],
-            [“Return shipping”, `£${returnShippingCost.toFixed(2)}`],
+            ["Items", lines.length],
+            ["Items total", `\u00a3${itemsTotal.toFixed(2)}`],
+            ["Shipping charged", `\u00a3${shippingCharged.toFixed(2)}`],
+            ["Purchase total", `\u00a3${purchaseTotal.toFixed(2)}`],
+            ["Platform fees", `\u00a3${platformFees.toFixed(2)}`],
+            ["Shipping cost", `\u00a3${shippingCost.toFixed(2)}`],
+            ["Other costs", `\u00a3${otherCosts.toFixed(2)}`],
+            ["Refunds", `\u00a3${refundAmount.toFixed(2)}`],
+            ["Return shipping", `\u00a3${returnShippingCost.toFixed(2)}`],
           ].map(([label, value]) => (
             <div key={String(label)}>
-              <div style={{ fontSize: 11, color: “var(--muted)”, fontWeight: 600 }}>{label}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{label}</div>
               <div style={{ fontWeight: 700, marginTop: 1 }}>{value}</div>
             </div>
           ))}
         </div>
 
         {sale.notes && (
-          <div style={{ marginTop: 12, fontSize: 13, color: “var(--muted)”, borderTop: “1px solid var(--border)”, paddingTop: 10 }}>
+          <div style={{ marginTop: 12, fontSize: 13, color: "var(--muted)", borderTop: "1px solid var(--border)", paddingTop: 10 }}>
             {sale.notes}
           </div>
         )}
@@ -222,46 +217,46 @@ export default async function SaleDetailPage({ params }: Props) {
       <SaleFulfillmentEditor
         saleId={sale.id}
         fulfillmentStatus={sale.fulfillmentStatus as FulfillmentStatus}
-        trackingNumber={sale.trackingNumber ?? “”}
-        carrier={sale.carrier ?? “”}
+        trackingNumber={sale.trackingNumber ?? ""}
+        carrier={sale.carrier ?? ""}
         shippedAt={toDatetimeLocal(sale.shippedAt)}
         deliveredAt={toDatetimeLocal(sale.deliveredAt)}
       />
 
       {/* Items as cards */}
       <div style={{ marginBottom: 14 }}>
-        <div className=”sectionLabel” style={{ marginBottom: 8 }}>
+        <div className="sectionLabel" style={{ marginBottom: 8 }}>
           Items ({lines.length})
         </div>
-        <div style={{ display: “grid”, gap: 8 }}>
+        <div style={{ display: "grid", gap: 8 }}>
           {lines.map((l) => (
             <div
               key={l.sku}
               style={{
-                border: “1px solid var(--border)”,
+                border: "1px solid var(--border)",
                 borderRadius: 12,
-                background: “var(--panel)”,
-                padding: “11px 13px”,
+                background: "var(--panel)",
+                padding: "11px 13px",
               }}
             >
               <div style={{ fontWeight: 700, fontSize: 14 }}>{l.title}</div>
-              <div style={{ fontSize: 12, color: “var(--muted)”, marginTop: 3 }}>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
                 {l.sku}
-                {l.loc !== “—“ ? ` · ${l.loc}` : “”}
+                {l.loc !== "\u2014" ? ` \u00b7 ${l.loc}` : ""}
               </div>
               <div
                 style={{
                   marginTop: 8,
-                  display: “flex”,
-                  justifyContent: “space-between”,
-                  alignItems: “center”,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                <div style={{ fontSize: 13, color: “var(--muted)” }}>
-                  Buy £{l.buy.toFixed(2)} → Sell £{l.sell.toFixed(2)}
+                <div style={{ fontSize: 13, color: "var(--muted)" }}>
+                  Buy £{l.buy.toFixed(2)} &rarr; Sell £{l.sell.toFixed(2)}
                 </div>
                 <span
-                  className={`badge ${l.itemProfit >= 0 ? “profitPos” : “profitNeg”}`}
+                  className={`badge ${l.itemProfit >= 0 ? "profitPos" : "profitNeg"}`}
                   style={{ fontSize: 12 }}
                 >
                   £{l.itemProfit.toFixed(2)}
@@ -270,8 +265,8 @@ export default async function SaleDetailPage({ params }: Props) {
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 12, color: “var(--muted)”, marginTop: 8 }}>
-          Item profit = sell − buy. Overall profit includes all fees and costs.
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
+          Item profit = sell &minus; buy. Overall profit includes all fees and costs.
         </div>
       </div>
 
