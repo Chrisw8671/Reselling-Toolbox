@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 import { bottomNavLinkClass, navIconClass, navLinkClass, ui } from "@/lib/ui";
 
 const links = [
-  { href: "/inventory", label: "Inventory" },
-  { href: "/sales", label: "Sales" },
-  { href: "/reports", label: "Reports" },
+  { href: "/inventory", label: "Inventory"},
+  { href: "/sales", label: "Sales"},
+  { href: "/reports", label: "Reports"},
+  { href: "/ebay-finder", label: "eBay Finder"},
 ];
 
 function HomeIcon({ size = 22 }: { size?: number }) {
