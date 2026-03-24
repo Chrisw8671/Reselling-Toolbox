@@ -1,4 +1,5 @@
 // app/inventory/page.tsx
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import InventoryTable from "@/components/InventoryTable";
@@ -197,7 +198,9 @@ export default async function InventoryPage({ searchParams }: Props) {
       recommendedPrice: computedRecommendedPrice,
       markdownPct: markdown.markdownPct,
       pricingAlert: needsReviewByAge,
-      pricingLastEvaluatedAt: it.lastPricingEvalAt ? it.lastPricingEvalAt.toISOString() : null,
+      pricingLastEvaluatedAt: it.lastPricingEvalAt
+        ? it.lastPricingEvalAt.toISOString()
+        : null,
       condition: it.condition ?? "",
       purchasedAt: it.purchasedAt ? it.purchasedAt.toISOString() : null,
       purchasedFrom: it.purchasedFrom ?? "",
@@ -279,11 +282,11 @@ export default async function InventoryPage({ searchParams }: Props) {
   })();
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Inventory</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
             Showing {itemsPlain.length} of {totalMatching} item(s)
             {totalPages > 1 ? ` • Page ${page} of ${totalPages}` : ""}
             {(q || status || safeAgeMin || needsPriceReview) && (
@@ -300,175 +303,182 @@ export default async function InventoryPage({ searchParams }: Props) {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Link className="btn" href={inStock ? inStockOffHref : inStockOnHref}>
+          <Link className={ui.button} href={inStock ? inStockOffHref : inStockOnHref}>
             {inStock ? "✓ In Stock only" : "In Stock only"}
           </Link>
 
-          <Link className="btn" href="/inventory/new">
+          <Link className={ui.button} href="/inventory/new">
             + Add
           </Link>
         </div>
       </div>
 
-<div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
-  <form action="/inventory" method="get">
-    {/* ✅ Search row: input + Filters + Search all on ONE LINE */}
-    <div
-      style={{
-        display: "grid",
-        gap: 12,
-        alignItems: "end",
-        gridTemplateColumns: "1fr max-content max-content",
-      }}
-    >
-      <label style={{ margin: 0 }}>
-        Search (SKU, title, location, purchase info)
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
-          style={{ width: "100%" }}
-        />
-      </label>
-
-      <Link className="btn" href={filtersOpen ? closeFiltersHref : openFiltersHref}>
-        {filtersOpen ? "Close" : "Filters"}
-      </Link>
-
-      {!filtersOpen ? (
-        <button className="btn" type="submit">
-          Search
-        </button>
-      ) : (
-        <span />
-      )}
-    </div>
-
-    {/* Keep filters open state */}
-    {filtersOpen && <input type="hidden" name="filters" value="1" />}
-
-    {/* Clear button (only when filters are closed, and you have something to clear) */}
-    {!filtersOpen && (q || (sp.page ?? "").trim()) && (
-      <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
-        <Link className="btn" href="/inventory">
-          Clear
-        </Link>
-      </div>
-    )}
-
-    {/* ✅ Filters section (unchanged from your current version) */}
-    {filtersOpen && (
-      <div className="inlineControls" style={{ marginTop: 12 }}>
-        <label style={{ width: 220 }}>
-          Age (days min)
-          <input
-            name="age_min"
-            type="number"
-            min={1}
-            step={1}
-            defaultValue={safeAgeMin ?? ""}
-            placeholder="e.g. 90"
-            style={{ width: "100%" }}
-          />
-        </label>
-
-        <label style={{ width: 220 }}>
-          Status
-          <select
-            name="status"
-            defaultValue={statusParam}
-            style={{ width: "100%" }}
-            disabled={inStock}
-            title={inStock ? "Turn off In Stock only to change status filter" : undefined}
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
+        <form action="/inventory" method="get">
+          {/* ✅ Search row: input + Filters + Search all on ONE LINE */}
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              alignItems: "end",
+              gridTemplateColumns: "1fr max-content max-content",
+            }}
           >
-            {statuses.map((s) => (
-              <option key={s} value={s}>
-                {s ? formatStatus(s) : "All"}
-              </option>
-            ))}
-          </select>
-        </label>
+            <label style={{ margin: 0 }}>
+              Search (SKU, title, location, purchase info)
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder='e.g. 2602-00041 or "Nike" or "BOX-01" or "Vinted"'
+                style={{ width: "100%" }}
+              />
+            </label>
 
-        <label style={{ width: 220 }}>
-          Platform
-          <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
-            <option value="">Any</option>
-            {platformOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        </label>
+            <Link
+              className={ui.button}
+              href={filtersOpen ? closeFiltersHref : openFiltersHref}
+            >
+              {filtersOpen ? "Close" : "Filters"}
+            </Link>
 
-        <label style={{ width: 180 }}>
-          Listed on any
-          <select
-            name="listed_on_any"
-            defaultValue={listedOnAny ? "1" : "0"}
-            style={{ width: "100%" }}
-          >
-            <option value="0">No filter</option>
-            <option value="1">Yes</option>
-          </select>
-        </label>
+            {!filtersOpen ? (
+              <button className={ui.button} type="submit">
+                Search
+              </button>
+            ) : (
+              <span />
+            )}
+          </div>
 
-        <label style={{ width: 220 }}>
-          Min listing count
-          <input
-            type="number"
-            min={0}
-            name="listed_on_count_min"
-            defaultValue={
-              Number.isFinite(listedOnCountMin) && listedOnCountMin > 0 ? listedOnCountMin : ""
-            }
-            placeholder="e.g. 2"
-            style={{ width: "100%" }}
-          />
-        </label>
+          {/* Keep filters open state */}
+          {filtersOpen && <input type="hidden" name="filters" value="1" />}
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            paddingBottom: 2,
-            cursor: "pointer",
-            margin: 0,
-          }}
-        >
-          <input
-            type="checkbox"
-            name="needs_price_review"
-            value="1"
-            defaultChecked={needsPriceReview}
-            style={{ width: 18, height: 18 }}
-          />
-          Needs price review
-        </label>
+          {/* Clear button (only when filters are closed, and you have something to clear) */}
+          {!filtersOpen && (q || (sp.page ?? "").trim()) && (
+            <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end" }}>
+              <Link className={ui.button} href="/inventory">
+                Clear
+              </Link>
+            </div>
+          )}
 
-        {inStock && <input type="hidden" name="in_stock" value="1" />}
+          {/* ✅ Filters section (unchanged from your current version) */}
+          {filtersOpen && (
+            <div className={ui.inlineControls} style={{ marginTop: 12 }}>
+              <label style={{ width: 220 }}>
+                Age (days min)
+                <input
+                  name="age_min"
+                  type="number"
+                  min={1}
+                  step={1}
+                  defaultValue={safeAgeMin ?? ""}
+                  placeholder="e.g. 90"
+                  style={{ width: "100%" }}
+                />
+              </label>
 
-        <button className="btn" type="submit">
-          Apply
-        </button>
+              <label style={{ width: 220 }}>
+                Status
+                <select
+                  name="status"
+                  defaultValue={statusParam}
+                  style={{ width: "100%" }}
+                  disabled={inStock}
+                  title={
+                    inStock ? "Turn off In Stock only to change status filter" : undefined
+                  }
+                >
+                  {statuses.map((s) => (
+                    <option key={s} value={s}>
+                      {s ? formatStatus(s) : "All"}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        {(q ||
-          statusParam ||
-          inStockParam ||
-          safeAgeMin ||
-          platform ||
-          listedOnAny ||
-          (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) ||
-          needsPriceReview) && (
-          <Link className="btn" href="/inventory">
-            Clear
-          </Link>
-        )}
+              <label style={{ width: 220 }}>
+                Platform
+                <select name="platform" defaultValue={platform} style={{ width: "100%" }}>
+                  <option value="">Any</option>
+                  {platformOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={{ width: 180 }}>
+                Listed on any
+                <select
+                  name="listed_on_any"
+                  defaultValue={listedOnAny ? "1" : "0"}
+                  style={{ width: "100%" }}
+                >
+                  <option value="0">No filter</option>
+                  <option value="1">Yes</option>
+                </select>
+              </label>
+
+              <label style={{ width: 220 }}>
+                Min listing count
+                <input
+                  type="number"
+                  min={0}
+                  name="listed_on_count_min"
+                  defaultValue={
+                    Number.isFinite(listedOnCountMin) && listedOnCountMin > 0
+                      ? listedOnCountMin
+                      : ""
+                  }
+                  placeholder="e.g. 2"
+                  style={{ width: "100%" }}
+                />
+              </label>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  paddingBottom: 2,
+                  cursor: "pointer",
+                  margin: 0,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  name="needs_price_review"
+                  value="1"
+                  defaultChecked={needsPriceReview}
+                  style={{ width: 18, height: 18 }}
+                />
+                Needs price review
+              </label>
+
+              {inStock && <input type="hidden" name="in_stock" value="1" />}
+
+              <button className={ui.button} type="submit">
+                Apply
+              </button>
+
+              {(q ||
+                statusParam ||
+                inStockParam ||
+                safeAgeMin ||
+                platform ||
+                listedOnAny ||
+                (Number.isFinite(listedOnCountMin) && listedOnCountMin > 0) ||
+                needsPriceReview) && (
+                <Link className={ui.button} href="/inventory">
+                  Clear
+                </Link>
+              )}
+            </div>
+          )}
+        </form>
       </div>
-    )}
-  </form>
-</div>
 
       <InventoryTable
         items={itemsPlain}
@@ -477,7 +487,7 @@ export default async function InventoryPage({ searchParams }: Props) {
 
       {totalPages > 1 && (
         <div
-          className="tableWrap"
+          className={ui.tableWrap}
           style={{
             padding: 12,
             marginTop: 12,
@@ -488,7 +498,11 @@ export default async function InventoryPage({ searchParams }: Props) {
             flexWrap: "wrap",
           }}
         >
-          <Link className="btn" href={pageHref(Math.max(1, page - 1))} aria-disabled={page <= 1}>
+          <Link
+            className={ui.button}
+            href={pageHref(Math.max(1, page - 1))}
+            aria-disabled={page <= 1}
+          >
             ← Prev
           </Link>
 
@@ -497,10 +511,13 @@ export default async function InventoryPage({ searchParams }: Props) {
             const needsEllipsis = idx > 0 && prev !== undefined && p - prev > 1;
 
             return (
-              <span key={p} style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                {needsEllipsis && <span className="muted">…</span>}
+              <span
+                key={p}
+                style={{ display: "inline-flex", gap: 8, alignItems: "center" }}
+              >
+                {needsEllipsis && <span className={ui.muted}>…</span>}
                 <Link
-                  className="btn"
+                  className={ui.button}
                   href={pageHref(p)}
                   style={{
                     fontWeight: p === page ? 800 : 600,
@@ -514,7 +531,7 @@ export default async function InventoryPage({ searchParams }: Props) {
           })}
 
           <Link
-            className="btn"
+            className={ui.button}
             href={pageHref(Math.min(totalPages, page + 1))}
             aria-disabled={page >= totalPages}
           >

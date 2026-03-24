@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { bottomNavLinkClass, navIconClass, navLinkClass, ui } from "@/lib/ui";
 
 const links = [
   { href: "/inventory", label: "Inventory"},
@@ -11,6 +11,28 @@ const links = [
   { href: "/reports", label: "Reports"},
   { href: "/ebay-finder", label: "eBay Finder"},
 ];
+
+function HomeIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4.5 10.5 12 4l7.5 6.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6.5 9.5V19a1 1 0 0 0 1 1h3.75v-5h1.5v5h3.75a1 1 0 0 0 1-1V9.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const mobilelinks = [
   { href: "/mobile", label: "Home", icon: "⌂", exact: true },
   { href: "/mobile/inventory", label: "Stock", icon: "📦" },
@@ -55,24 +77,8 @@ function SettingsCogIcon({ size = 22 }: { size?: number }) {
   );
 }
 
-
 export default function Navbar() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-
-  // close menu when route changes
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
-  // close on Escape
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   function isActive(href: string) {
     return href === "/"
@@ -82,50 +88,44 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="navbar">
-        <div className="navLeft navDesktop">
-          <Link href="/" className="logoLink" aria-label="Go to dashboard">
+      <header className={ui.navHeader}>
+        <div className={ui.navDesktopGroup}>
+          <Link href="/" className={ui.logoLink} aria-label="Go to dashboard">
             <Image
               src="/logo.png"
               alt="Logo"
               width={40}
               height={40}
-              className="logo"
+              className={ui.logo}
               priority
             />
           </Link>
         </div>
-        <div className="navLeft navMobile">
-          <Link href="/mobile/" className="logoLink" aria-label="Go to dashboard">
+        <div className={ui.navMobileGroup}>
+          <Link href="/mobile/" className={ui.logoLink} aria-label="Go to dashboard">
             <Image
               src="/logo.png"
               alt="Logo"
               width={40}
               height={40}
-              className="logo"
+              className={ui.logo}
               priority
             />
           </Link>
         </div>
 
-        {/* Desktop nav */}
-        <nav className="navLinks navDesktop">
+        <nav className={ui.navDesktopLinks}>
           {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={isActive(l.href) ? "navActive" : ""}
-            >
+            <Link key={l.href} href={l.href} className={navLinkClass(isActive(l.href))}>
               {l.label}
             </Link>
           ))}
         </nav>
 
-        {/* Right side icons */}
-        <div className="navRight">
+        <div className={ui.navRight}>
           <Link
             href="/account"
-            className={pathname.startsWith("/account") ? "navIcon navActive" : "navIcon"}
+            className={navIconClass(pathname.startsWith("/account"))}
             aria-label="Account"
           >
             <AccountIcon />
@@ -133,7 +133,7 @@ export default function Navbar() {
 
           <Link
             href="/settings"
-            className={pathname.startsWith("/settings") ? "navIcon navActive" : "navIcon"}
+            className={navIconClass(pathname.startsWith("/settings"))}
             aria-label="Settings"
           >
             <SettingsCogIcon />
@@ -141,16 +141,12 @@ export default function Navbar() {
         </div>
       </header>
 
-      <nav className="mobileBottomNav" aria-label="Primary">
+      <nav className={ui.mobileBottomNav} aria-label="Primary">
         {mobilelinks.map((l) => {
           const active = l.exact ? pathname === l.href : isActive(l.href);
           return (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={active ? "bottomActive" : ""}
-            >
-              <span className="navTabIcon">{l.icon}</span>
+            <Link key={l.href} href={l.href} className={bottomNavLinkClass(active)}>
+              <span className={ui.navTabIcon}>{l.href === "/mobile" ? <HomeIcon /> : l.icon}</span>
               {l.label}
             </Link>
           );

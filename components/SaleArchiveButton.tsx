@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/lib/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -36,7 +37,7 @@ export default function SaleArchiveButton({
 
   return (
     <button
-      className="btn"
+      className={ui.button}
       type="button"
       disabled={busy}
       onClick={toggleArchive}

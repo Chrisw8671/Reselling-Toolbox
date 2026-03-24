@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/lib/ui";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -52,7 +53,7 @@ export default function SaleFulfillmentEditor(props: Props) {
   }
 
   return (
-    <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+    <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
       <div style={{ fontWeight: 800, marginBottom: 12 }}>Fulfillment</div>
 
       <div
@@ -82,7 +83,7 @@ export default function SaleFulfillmentEditor(props: Props) {
               ))}
             </select>
             <span
-              className="badge"
+              className={ui.badge}
               style={{
                 backgroundColor: FULFILLMENT_COLORS[form.fulfillmentStatus],
                 color: "white",
@@ -135,7 +136,7 @@ export default function SaleFulfillmentEditor(props: Props) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <button className="btn" type="button" disabled={saving} onClick={save}>
+        <button className={ui.button} type="button" disabled={saving} onClick={save}>
           {saving ? "Saving..." : "Save fulfillment updates"}
         </button>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/lib/ui";
 import {
   ResponsiveContainer,
   LineChart,
@@ -33,13 +34,13 @@ export default function ReportsCharts({
   const pieColors = ["#6ee7b7", "#93c5fd", "#c4b5fd", "#fbbf24", "#fca5a5", "#a7f3d0"];
 
   return (
-    <div className="chartsGrid">
+    <div className={ui.chartsGrid}>
       {/* Monthly profit line */}
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>
           Monthly Profit (last 12 months)
         </div>
-        <div className="chartBox">
+        <div className={ui.chartBox}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={monthlyProfit}
@@ -56,9 +57,9 @@ export default function ReportsCharts({
       </div>
 
       {/* Profit by platform bar */}
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Profit by Platform</div>
-        <div className="chartBox">
+        <div className={ui.chartBox}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={profitByPlatform}
@@ -75,9 +76,9 @@ export default function ReportsCharts({
       </div>
 
       {/* Inventory status pie */}
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Inventory Status Split</div>
-        <div className="chartBox">
+        <div className={ui.chartBox}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <Pie
@@ -100,9 +101,9 @@ export default function ReportsCharts({
       </div>
 
       {/* Aging buckets bar */}
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Unsold Stock Age (days)</div>
-        <div className="chartBox">
+        <div className={ui.chartBox}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={agingBuckets}

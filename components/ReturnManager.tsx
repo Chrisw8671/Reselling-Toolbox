@@ -1,5 +1,6 @@
 "use client";
 
+import { badgeClass, ui } from "@/lib/ui";
 import { useState } from "react";
 
 type ReturnCase = {
@@ -63,7 +64,7 @@ export default function ReturnManager({
   }
 
   return (
-    <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+    <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
       <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Returns</div>
 
       <div
@@ -75,7 +76,7 @@ export default function ReturnManager({
         }}
       >
         <div>
-          <label className="muted">Item</label>
+          <label className={ui.muted}>Item</label>
           <select value={stockUnitId} onChange={(e) => setStockUnitId(e.target.value)}>
             {lines.map((l) => (
               <option key={l.stockUnit.id} value={l.stockUnit.id}>
@@ -86,12 +87,12 @@ export default function ReturnManager({
         </div>
 
         <div>
-          <label className="muted">Reason</label>
+          <label className={ui.muted}>Reason</label>
           <input value={reason} onChange={(e) => setReason(e.target.value)} />
         </div>
 
         <div>
-          <label className="muted">Refund (£)</label>
+          <label className={ui.muted}>Refund (£)</label>
           <input
             type="number"
             step="0.01"
@@ -101,7 +102,7 @@ export default function ReturnManager({
         </div>
 
         <div>
-          <label className="muted">Return Shipping (£)</label>
+          <label className={ui.muted}>Return Shipping (£)</label>
           <input
             type="number"
             step="0.01"
@@ -131,7 +132,7 @@ export default function ReturnManager({
 
       <div style={{ marginTop: 12 }}>
         <button
-          className="btn"
+          className={ui.button}
           onClick={saveReturnCase}
           disabled={saving || !stockUnitId}
         >
@@ -141,12 +142,12 @@ export default function ReturnManager({
 
       {existingCases.length > 0 && (
         <div style={{ marginTop: 14 }}>
-          <div className="muted" style={{ marginBottom: 6 }}>
+          <div className={ui.muted} style={{ marginBottom: 6 }}>
             Existing return cases
           </div>
           {existingCases.map((rc) => (
             <div key={rc.id} style={{ marginBottom: 6 }}>
-              <span className="badge RETURNED" style={{ marginRight: 8 }}>
+              <span className={badgeClass("RETURNED")} style={{ marginRight: 8 }}>
                 {rc.closedAt ? "Closed" : "Open"}
               </span>
               {rc.reason} • Refund £{Number(rc.refundAmount).toFixed(2)} • Shipping £

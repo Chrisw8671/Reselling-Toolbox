@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import SalesTable from "@/components/SalesTable";
@@ -123,39 +124,37 @@ export default async function SalesPage({ searchParams }: Props) {
   const thisMonthOffHref = qsBase.toString() ? `/sales?${qsBase.toString()}` : "/sales";
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Sales</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
-            {rows.length} sale(s) • Total profit shown: {moneyGBP(totalProfit)}
+          <div className={ui.muted} style={{ marginTop: 4 }}>
+            {rows.length} sale(s) - Total profit shown: {moneyGBP(totalProfit)}
             {(q || platform || thisMonth || fulfillmentStatus) && (
               <>
                 {" "}
-                • Filtered
-                {q ? ` by “${q}”` : ""}
-                {platform ? ` • Platform: ${platform}` : ""}
-                {fulfillmentStatus
-                  ? ` • Status: ${FULFILLMENT_LABEL[fulfillmentStatus]}`
-                  : ""}
-                {thisMonth ? ` • This month only` : ""}
+                - Filtered
+                {q ? ` by "${q}"` : ""}
+                {platform ? ` - Platform: ${platform}` : ""}
+                {fulfillmentStatus ? ` - Status: ${FULFILLMENT_LABEL[fulfillmentStatus]}` : ""}
+                {thisMonth ? " - This month only" : ""}
               </>
             )}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Link className="btn" href={thisMonth ? thisMonthOffHref : thisMonthOnHref}>
-            {thisMonth ? "✓ This month only" : "This month only"}
+          <Link className={ui.button} href={thisMonth ? thisMonthOffHref : thisMonthOnHref}>
+            {thisMonth ? "On: This month only" : "This month only"}
           </Link>
 
-          <Link className="btn" href="/sales/new">
+          <Link className={ui.button} href="/sales/new">
             + Create Sale
           </Link>
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <form
           action="/sales"
           method="get"
@@ -206,12 +205,12 @@ export default async function SalesPage({ searchParams }: Props) {
 
           {thisMonth && <input type="hidden" name="this_month" value="1" />}
 
-          <button className="btn" type="submit">
+          <button className={ui.button} type="submit">
             Apply
           </button>
 
           {(q || platform || thisMonth || fulfillmentStatus) && (
-            <Link className="btn" href="/sales">
+            <Link className={ui.button} href="/sales">
               Clear
             </Link>
           )}
@@ -220,9 +219,9 @@ export default async function SalesPage({ searchParams }: Props) {
 
       <SalesTable rows={rows} />
 
-      <div className="muted" style={{ marginTop: 12 }}>
-        Profit: (item prices + shipping charged) − (purchase costs + fees + shipping cost
-        + other costs).
+      <div className={ui.muted} style={{ marginTop: 12 }}>
+        Profit: (item prices + shipping charged) - (purchase costs + fees + shipping cost + other
+        costs).
       </div>
     </div>
   );

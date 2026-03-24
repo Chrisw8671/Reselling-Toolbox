@@ -1,10 +1,15 @@
+import { cx, ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
 export default async function MobileHomePage() {
   const [stockCount, openSalesCount, listedCount, salesForProfit] = await Promise.all([
-    prisma.stockUnit.count({ where: { archived: false, status: { in: ["IN_STOCK", "LISTED"] } } }),
-    prisma.sale.count({ where: { archived: false, fulfillmentStatus: { not: "DELIVERED" } } }),
+    prisma.stockUnit.count({
+      where: { archived: false, status: { in: ["IN_STOCK", "LISTED"] } },
+    }),
+    prisma.sale.count({
+      where: { archived: false, fulfillmentStatus: { not: "DELIVERED" } },
+    }),
     prisma.stockUnit.count({ where: { archived: false, status: "LISTED" } }),
     prisma.sale.findMany({
       where: { archived: false },
@@ -13,13 +18,16 @@ export default async function MobileHomePage() {
         platformFees: true,
         shippingCost: true,
         otherCosts: true,
-        lines: { select: { salePrice: true, stockUnit: { select: { purchaseCost: true } } } },
+        lines: {
+          select: { salePrice: true, stockUnit: { select: { purchaseCost: true } } },
+        },
       },
     }),
   ]);
 
   const totalProfit = salesForProfit.reduce((sum, s) => {
-    const rev = s.lines.reduce((r, l) => r + Number(l.salePrice), 0) + Number(s.shippingCharged);
+    const rev =
+      s.lines.reduce((r, l) => r + Number(l.salePrice), 0) + Number(s.shippingCharged);
     const cost =
       s.lines.reduce((r, l) => r + Number(l.stockUnit.purchaseCost), 0) +
       Number(s.platformFees) +
@@ -29,20 +37,18 @@ export default async function MobileHomePage() {
   }, 0);
 
   return (
-    <div className="mobilePg">
-      <div style={{ paddingTop: 10, paddingBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+    <div className={ui.mobilePage}>
+      <div className="pt-2.5 pb-4">
+        <div className="text-app-muted text-xs font-bold tracking-[0.5px] uppercase">
           Reselling Toolbox
         </div>
-        <h1 style={{ fontSize: 30, fontWeight: 900, margin: "2px 0 0", letterSpacing: "-0.5px" }}>
-          Dashboard
-        </h1>
+        <h1 className="mt-0.5 text-[30px] font-black tracking-[-0.5px]">Dashboard</h1>
       </div>
 
       {/* Stats */}
-      <div className="statGrid">
-        <div className="statTile wide">
-          <div className="statLabel">Lifetime profit</div>
+      <div className={ui.statGrid}>
+        <div className={cx(ui.statTile, ui.statTileWide)}>
+          <div className={ui.statLabel}>Lifetime profit</div>
           <div
             style={{
               fontSize: 38,
@@ -56,55 +62,44 @@ export default async function MobileHomePage() {
           </div>
         </div>
 
-        <div className="statTile">
-          <div className="statLabel">Active stock</div>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Active stock</div>
+          <div className="mt-0.5 text-[30px] font-black tracking-[-0.5px]">
             {stockCount}
           </div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
-            {listedCount} listed
-          </div>
+          <div className="text-app-muted mt-[3px] text-xs">{listedCount} listed</div>
         </div>
 
-        <div className="statTile">
-          <div className="statLabel">Open orders</div>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Open orders</div>
+          <div className="mt-0.5 text-[30px] font-black tracking-[-0.5px]">
             {openSalesCount}
           </div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
+          <div className="text-app-muted mt-[3px] text-xs">
             {openSalesCount === 0 ? "all caught up" : "need action"}
           </div>
         </div>
       </div>
 
       {/* Quick actions */}
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: "0.5px",
-          color: "var(--muted)",
-          marginBottom: 8,
-        }}
-      >
+      <div className="text-app-muted mb-2 text-[11px] font-extrabold tracking-[0.5px] uppercase">
         Quick actions
       </div>
-      <div className="actionGrid">
-        <Link href="/mobile/inventory/new" className="actionTile">
-          <span className="actionIcon">📦</span>
+      <div className={ui.actionGrid}>
+        <Link href="/mobile/inventory/new" className={ui.actionTile}>
+          <span className={ui.actionIcon}>📦</span>
           Add item
         </Link>
-        <Link href="/mobile/sales/new" className="actionTile">
-          <span className="actionIcon">🧾</span>
+        <Link href="/mobile/sales/new" className={ui.actionTile}>
+          <span className={ui.actionIcon}>🧾</span>
           New sale
         </Link>
-        <Link href="/mobile/inventory" className="actionTile">
-          <span className="actionIcon">🔍</span>
+        <Link href="/mobile/inventory" className={ui.actionTile}>
+          <span className={ui.actionIcon}>🔍</span>
           Browse stock
         </Link>
-        <Link href="/mobile/report" className="actionTile">
-          <span className="actionIcon">📊</span>
+        <Link href="/mobile/report" className={ui.actionTile}>
+          <span className={ui.actionIcon}>📊</span>
           View report
         </Link>
       </div>

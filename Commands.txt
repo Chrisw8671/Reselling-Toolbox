@@ -1,0 +1,39 @@
+🔧 Quick PM2 health checks / restart commands
+Excellent progress — your setup is on the right track and just needs polish.
+Use these commands at any time in your project folder:
+
+1) Is it running?
+pm2 status
+pm2 list
+2) View logs
+pm2 logs reseller-app --lines 50
+pm2 logs reseller-app --err (error-only)
+pm2 logs reseller-app --out (stdout-only)
+3) Restart app
+pm2 restart reseller-app
+(or rollback with fresh start:)
+pm2 stop reseller-app
+pm2 delete reseller-app
+pm2 start ecosystem.config.js
+4) Stop cleanly
+pm2 stop reseller-app
+pm2 delete reseller-app
+pm2 flush (clear old logs)
+5) Check current command plus environment
+pm2 show reseller-app
+🧩 Alternative “quick local check” without PM2
+If you just want test now:
+
+Then open:
+
+http://localhost:3000
+http://192.168.0.47:3000
+💡 Optional OS service wrapper (more robust)
+Windows “service-like” with NSSM:
+
+nssm install reseller-app
+application: C:\Program Files\nodejs\node.exe
+args: node_modules\next\dist\bin\next dev --hostname 0.0.0.0 --port 3000
+nssm start reseller-app
+nssm stop reseller-app
+But PM2 commands above are the direct answer for what you asked.

@@ -1,5 +1,6 @@
 "use client";
 
+import { cx, ui } from "@/lib/ui";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -84,16 +85,16 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
   }
 
   return (
-    <div className="tableWrap">
+    <div className={ui.tableWrap}>
       <div
         style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}
       >
-        <div className="muted" style={{ fontSize: 13 }}>
+        <div className={ui.muted} style={{ fontSize: 13 }}>
           {items.length} archived item(s)
         </div>
 
         <button
-          className="btn"
+          className={ui.button}
           type="button"
           disabled={selectedIds.length === 0}
           onClick={() => openConfirm(selectedIds)}
@@ -103,23 +104,23 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
         </button>
       </div>
 
-      <table className="table">
-        <thead className="thead">
+      <table className={ui.table}>
+        <thead className={ui.thead}>
           <tr>
-            <th className="th" style={{ width: 44 }}>
+            <th className={ui.th} style={{ width: 44 }}>
               <input type="checkbox" checked={allChecked} onChange={toggleAll} />
             </th>
-            <th className="th" style={{ width: 170 }}>
+            <th className={ui.th} style={{ width: 170 }}>
               SKU
             </th>
-            <th className="th">Title</th>
-            <th className="th" style={{ width: 120 }}>
+            <th className={ui.th}>Title</th>
+            <th className={ui.th} style={{ width: 120 }}>
               Loc
             </th>
-            <th className="th" style={{ width: 190 }}>
+            <th className={ui.th} style={{ width: 190 }}>
               Archived
             </th>
-            <th className="th" style={{ width: 120, textAlign: "right" }}>
+            <th className={ui.th} style={{ width: 120, textAlign: "right" }}>
               Action
             </th>
           </tr>
@@ -127,8 +128,8 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
 
         <tbody>
           {items.map((it) => (
-            <tr className="tr" key={it.id}>
-              <td className="td">
+            <tr className={ui.tr} key={it.id}>
+              <td className={ui.td}>
                 <input
                   type="checkbox"
                   checked={!!selected[it.id]}
@@ -137,25 +138,25 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
               </td>
 
               <td
-                className="td"
+                className={ui.td}
                 style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
               >
                 {it.sku}
               </td>
 
-              <td className="td titleCell">
-                {it.titleOverride ?? <span className="muted">—</span>}
+              <td className={cx(ui.td, ui.titleCell)}>
+                {it.titleOverride ?? <span className={ui.muted}>—</span>}
               </td>
 
-              <td className="td">
-                {it.location?.code ?? <span className="muted">—</span>}
+              <td className={ui.td}>
+                {it.location?.code ?? <span className={ui.muted}>—</span>}
               </td>
 
-              <td className="td">{formatDate(it.archivedAt ?? it.createdAt)}</td>
+              <td className={ui.td}>{formatDate(it.archivedAt ?? it.createdAt)}</td>
 
-              <td className="td" style={{ textAlign: "right" }}>
+              <td className={ui.td} style={{ textAlign: "right" }}>
                 <button
-                  className="iconBtn"
+                  className={ui.iconButton}
                   type="button"
                   title="Permanently delete"
                   onClick={() => openConfirm([it.id])} // ✅ direct
@@ -167,8 +168,8 @@ export default function ArchiveTable({ items }: { items: Item[] }) {
           ))}
 
           {items.length === 0 && (
-            <tr className="tr">
-              <td className="td muted" colSpan={6}>
+            <tr className={ui.tr}>
+              <td className={cx(ui.td, ui.muted)} colSpan={6}>
                 No archived items.
               </td>
             </tr>
@@ -204,10 +205,10 @@ function ConfirmModal({
   onConfirm: () => void;
 }) {
   return (
-    <div className="modalOverlay">
-      <div className="modalCard">
+    <div className={ui.modalOverlay}>
+      <div className={ui.modalCard}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Permanently delete?</h2>
-        <p className="muted" style={{ marginTop: 8 }}>
+        <p className={ui.muted} style={{ marginTop: 8 }}>
           You are about to permanently delete <b>{count}</b> item{count === 1 ? "" : "s"}.
           This cannot be undone.
         </p>
@@ -215,11 +216,11 @@ function ConfirmModal({
         <div
           style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}
         >
-          <button className="btn" type="button" disabled={busy} onClick={onCancel}>
+          <button className={ui.button} type="button" disabled={busy} onClick={onCancel}>
             Cancel
           </button>
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || count === 0}
             onClick={onConfirm}

@@ -48,7 +48,8 @@ export async function POST(req: Request) {
 
   // location
   let locationId: string | null = null;
-  const normalizedLocationCode = parseOptionalString(body.locationCode)?.toUpperCase() ?? null;
+  const normalizedLocationCode =
+    parseOptionalString(body.locationCode)?.toUpperCase() ?? null;
 
   if (normalizedLocationCode) {
     const loc = await prisma.location.upsert({

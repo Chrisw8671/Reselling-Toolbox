@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import LocationsTable from "@/components/LocationsTable";
@@ -25,17 +26,17 @@ export default async function LocationsPage() {
   }));
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Locations</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
             {rows.length} location(s)
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Link className="btn" href="/inventory">
+          <Link className={ui.button} href="/inventory">
             ← Inventory
           </Link>
         </div>
@@ -43,7 +44,7 @@ export default async function LocationsPage() {
 
       <LocationsTable rows={rows} />
 
-      <div className="muted" style={{ marginTop: 12 }}>
+      <div className={ui.muted} style={{ marginTop: 12 }}>
         Tip: Locations are used in the “Bay/Box code” dropdown on new/edit item pages.
       </div>
     </div>

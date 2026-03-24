@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ArchiveTable from "@/components/ArchiveTable";
@@ -46,25 +47,25 @@ export default async function InventoryArchivePage({ searchParams }: Props) {
   }));
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Archived Items</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
             {itemsPlain.length} archived item(s)
             {q ? ` • Filtered by “${q}”` : ""}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Link className="btn" href="/inventory">
+          <Link className={ui.button} href="/inventory">
             ← Inventory
           </Link>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <form
           action="/inventory/archive"
           method="get"
@@ -80,12 +81,12 @@ export default async function InventoryArchivePage({ searchParams }: Props) {
             />
           </label>
 
-          <button className="btn" type="submit">
+          <button className={ui.button} type="submit">
             Apply
           </button>
 
           {q && (
-            <Link className="btn" href="/inventory/archive">
+            <Link className={ui.button} href="/inventory/archive">
               Clear
             </Link>
           )}

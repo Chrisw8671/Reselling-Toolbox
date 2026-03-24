@@ -1,6 +1,7 @@
 // components/InventoryTable.tsx
 "use client";
 
+import { badgeClass, cx, ui } from "@/lib/ui";
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { formatStatus } from "@/lib/status";
@@ -74,7 +75,10 @@ export default function InventoryTable({
   }
 
   const selectedSkus = useMemo(
-    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
+    () =>
+      Object.entries(selected)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
     [selected],
   );
 
@@ -132,7 +136,10 @@ export default function InventoryTable({
 
   async function archiveSelected() {
     if (!confirm(`Archive ${selectedSkus.length} item(s)?`)) return;
-    await runBulkAction({ action: "archive" }, `Archived ${selectedSkus.length} item(s).`);
+    await runBulkAction(
+      { action: "archive" },
+      `Archived ${selectedSkus.length} item(s).`,
+    );
   }
 
   function createSaleFromSelected() {
@@ -142,7 +149,7 @@ export default function InventoryTable({
   }
 
   return (
-    <div className="tableWrap">
+    <div className={ui.tableWrap}>
       {copyToast && (
         <div
           role="status"
@@ -178,7 +185,7 @@ export default function InventoryTable({
       >
         {/* Top-left text */}
         <div style={{ alignSelf: "flex-start", whiteSpace: "nowrap", minWidth: 160 }}>
-          <div className="muted" style={{ fontSize: 13 }}>
+          <div className={ui.muted} style={{ fontSize: 13 }}>
             {items.length} item(s) • Selected: {selectedSkus.length}
           </div>
         </div>
@@ -194,7 +201,7 @@ export default function InventoryTable({
             flex: "1 1 520px",
           }}
         >
-          <label style={{display: "flex", flexDirection: "column", minWidth: 180,}}>
+          <label style={{ display: "flex", flexDirection: "column", minWidth: 180 }}>
             Set status
             <select value={statusValue} onChange={(e) => setStatusValue(e.target.value)}>
               <option value="">Choose…</option>
@@ -207,7 +214,7 @@ export default function InventoryTable({
           </label>
 
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || selectedSkus.length === 0 || !statusValue}
             onClick={() =>
@@ -232,7 +239,7 @@ export default function InventoryTable({
           </label>
 
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || selectedSkus.length === 0}
             onClick={() =>
@@ -247,11 +254,14 @@ export default function InventoryTable({
 
           <label style={{ display: "flex", flexDirection: "column", minWidth: 140 }}>
             Move location
-            <input value={locationCode} onChange={(e) => setLocationCode(e.target.value)} />
+            <input
+              value={locationCode}
+              onChange={(e) => setLocationCode(e.target.value)}
+            />
           </label>
 
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || selectedSkus.length === 0 || !locationCode.trim()}
             onClick={() =>
@@ -265,7 +275,7 @@ export default function InventoryTable({
           </button>
 
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || selectedSkus.length === 0}
             onClick={createSaleFromSelected}
@@ -274,7 +284,7 @@ export default function InventoryTable({
           </button>
 
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || selectedSkus.length === 0}
             onClick={archiveSelected}
@@ -284,7 +294,7 @@ export default function InventoryTable({
 
           {quickAction === "MARKDOWN_15" && (
             <button
-              className="btn"
+              className={ui.button}
               type="button"
               disabled={busy || selectedSkus.length === 0}
               onClick={() =>
@@ -301,27 +311,27 @@ export default function InventoryTable({
         </div>
       </div>
 
-      <div className="tableScroll">
-        <table className="table">
-          <thead className="thead">
+      <div className={ui.tableScroll}>
+        <table className={ui.table}>
+          <thead className={ui.thead}>
             <tr>
-              <th className="th" style={{ width: 44 }}>
+              <th className={ui.th} style={{ width: 44 }}>
                 <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
-              <th className="th" style={{ width: 170 }}>
+              <th className={ui.th} style={{ width: 170 }}>
                 SKU
               </th>
-              <th className="th">Title</th>
-              <th className="th" style={{ width: 150 }}>
+              <th className={ui.th}>Title</th>
+              <th className={ui.th} style={{ width: 150 }}>
                 Status
               </th>
-              <th className="th" style={{ width: 110 }}>
+              <th className={ui.th} style={{ width: 110 }}>
                 Loc
               </th>
-              <th className="th" style={{ width: 120 }}>
+              <th className={ui.th} style={{ width: 120 }}>
                 Cost
               </th>
-              <th className="th" style={{ width: 160, textAlign: "right" }}>
+              <th className={ui.th} style={{ width: 160, textAlign: "right" }}>
                 Actions
               </th>
             </tr>
@@ -331,11 +341,13 @@ export default function InventoryTable({
             {items.map((it) => (
               <tr
                 key={it.sku}
-                className="tr rowClick"
-                style={it.pricingAlert ? { backgroundColor: "rgba(245, 158, 11, 0.1)" } : {}}
+                className={cx(ui.tr, ui.rowClick)}
+                style={
+                  it.pricingAlert ? { backgroundColor: "rgba(245, 158, 11, 0.1)" } : {}
+                }
                 onClick={() => router.push(skuHref(it.sku))}
               >
-                <td className="td" onClick={(e) => e.stopPropagation()}>
+                <td className={ui.td} onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={!!selected[it.sku]}
@@ -343,7 +355,7 @@ export default function InventoryTable({
                   />
                 </td>
 
-                <td className="td">
+                <td className={ui.td}>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -366,22 +378,22 @@ export default function InventoryTable({
                   </button>
                 </td>
 
-                <td className="td titleCell">{it.titleOverride ?? "—"}</td>
+                <td className={cx(ui.td, ui.titleCell)}>{it.titleOverride ?? "—"}</td>
 
-                <td className="td">
-                  <span className={`badge ${it.status}`}>{formatStatus(it.status)}</span>
+                <td className={ui.td}>
+                  <span className={badgeClass(it.status)}>{formatStatus(it.status)}</span>
                 </td>
 
-                <td className="td">{it.location?.code ?? "—"}</td>
-                <td className="td">{moneyGBP(it.purchaseCost)}</td>
+                <td className={ui.td}>{it.location?.code ?? "—"}</td>
+                <td className={ui.td}>{moneyGBP(it.purchaseCost)}</td>
 
                 <td
-                  className="td"
+                  className={ui.td}
                   style={{ textAlign: "right" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div
-                    className="actions"
+                    className={ui.actions}
                     style={{
                       display: "flex",
                       gap: 8,
@@ -391,7 +403,7 @@ export default function InventoryTable({
                     }}
                   >
                     <button
-                      className="iconBtn"
+                      className={ui.iconButton}
                       title="Edit"
                       type="button"
                       onClick={() => router.push(skuHref(it.sku))}
@@ -400,7 +412,7 @@ export default function InventoryTable({
                     </button>
 
                     <button
-                      className="iconBtn"
+                      className={ui.iconButton}
                       title="Duplicate"
                       type="button"
                       onClick={async () => {
@@ -422,7 +434,7 @@ export default function InventoryTable({
                     </button>
 
                     <button
-                      className="iconBtn"
+                      className={ui.iconButton}
                       title="Archive"
                       type="button"
                       onClick={async () => {
@@ -449,8 +461,8 @@ export default function InventoryTable({
             ))}
 
             {items.length === 0 && (
-              <tr className="tr">
-                <td className="td muted" colSpan={7}>
+              <tr className={ui.tr}>
+                <td className={cx(ui.td, ui.muted)} colSpan={7}>
                   No matching items.
                 </td>
               </tr>

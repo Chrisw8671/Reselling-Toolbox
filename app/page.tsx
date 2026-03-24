@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { moneyGBP, startOfMonth, startOfWeekMonday, isoDateFromDate } from "@/lib/format";
@@ -86,25 +87,25 @@ export default async function HomePage() {
   const userName = "User";
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>
             Welcome, {userName}
           </h1>
-          <div className="muted" style={{ marginTop: 6 }}>
+          <div className={ui.muted} style={{ marginTop: 6 }}>
             Quick overview of your reselling activity.
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Link className="btn" href="/inventory/new">
+          <Link className={ui.button} href="/inventory/new">
             + Add inventory
           </Link>
-          <Link className="btn" href="/sales/new">
+          <Link className={ui.button} href="/sales/new">
             + Create sale
           </Link>
-          <Link className="btn" href="/reports">
+          <Link className={ui.button} href="/reports">
             View reports
           </Link>
         </div>
@@ -118,56 +119,56 @@ export default async function HomePage() {
           marginBottom: 16,
         }}
       >
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Inventory items (active)</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Inventory items (active)</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>{totalStock}</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
             Not archived
           </div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Items added this week</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Items added this week</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>{addedThisWeek}</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
             Since {isoDateFromDate(weekStart)}
           </div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Profit this month</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Profit this month</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>{moneyGBP(profitThisMonth)}</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
             Excludes archived sales
           </div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Sell-through (active)</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Sell-through (active)</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>{sellThrough.toFixed(1)}%</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
             Sold / (In Stock + Listed + Sold)
           </div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Cross-listed items</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Cross-listed items</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>{crossListedItems}</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
             Listed on 2+ platforms
           </div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Single-platform only</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Single-platform only</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>{singlePlatformOnlyItems}</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
             Opportunities to cross-list
           </div>
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 10 }}>
           Inventory status
         </div>
@@ -181,136 +182,135 @@ export default async function HomePage() {
         >
           <Link
             href="/inventory?in_stock=1"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">In stock</div>
+            <div className={ui.muted}>In stock</div>
             <div style={{ fontSize: 30, fontWeight: 900 }}>{inStockCount}</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               Ready to list / sell
             </div>
           </Link>
 
           <Link
             href="/inventory?status=LISTED"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">Listed</div>
+            <div className={ui.muted}>Listed</div>
             <div style={{ fontSize: 30, fontWeight: 900 }}>{listedCount}</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               Currently for sale
             </div>
           </Link>
 
           <Link
             href="/inventory?status=SOLD"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">Sold (not archived)</div>
+            <div className={ui.muted}>Sold (not archived)</div>
             <div style={{ fontSize: 30, fontWeight: 900 }}>{soldCount}</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               Consider archiving periodically
             </div>
           </Link>
 
           <Link
             href="/sales?fulfillmentStatus=PENDING"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">Awaiting shipment</div>
+            <div className={ui.muted}>Awaiting shipment</div>
             <div style={{ fontSize: 30, fontWeight: 900 }}>{awaitingShipmentCount}</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               Pending fulfillment
             </div>
           </Link>
 
           <Link
             href="/sales?fulfillmentStatus=SHIPPED"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">Shipped not delivered</div>
+            <div className={ui.muted}>Shipped not delivered</div>
             <div style={{ fontSize: 30, fontWeight: 900 }}>
               {shippedNotDeliveredCount}
             </div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               In transit
             </div>
           </Link>
 
           <Link
             href="/sales?fulfillmentStatus=ISSUE"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">Issues</div>
+            <div className={ui.muted}>Issues</div>
             <div style={{ fontSize: 30, fontWeight: 900 }}>{issueCount}</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               Needs attention
             </div>
           </Link>
 
           <Link
             href="/inventory?status=LISTED&age_min=45&needs_price_review=1"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">Needs price review</div>
+            <div className={ui.muted}>Needs price review</div>
             <div style={{ fontSize: 30, fontWeight: 900 }}>{needsPriceReviewCount}</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               Listed for 45+ days
             </div>
           </Link>
 
           <Link
             href="/settings"
-            className="tableWrap"
+            className={ui.tableWrap}
             style={{ padding: 16, textDecoration: "none" }}
           >
-            <div className="muted">Quick access</div>
+            <div className={ui.muted}>Quick access</div>
             <div style={{ fontSize: 18, fontWeight: 900 }}>Settings</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            <div className={ui.muted} style={{ marginTop: 6, fontSize: 13 }}>
               Locations, archives, etc.
             </div>
           </Link>
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 10 }}>
           Quick actions
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Link className="btn" href="/inventory">
+          <Link className={ui.button} href="/inventory">
             View inventory
           </Link>
-          <Link className="btn" href="/sales">
+          <Link className={ui.button} href="/sales">
             View sales
           </Link>
-          <Link className="btn" href="/inventory/archive">
+          <Link className={ui.button} href="/inventory/archive">
             Archived items
           </Link>
-          <Link className="btn" href="/sales/archive">
+          <Link className={ui.button} href="/sales/archive">
             Archived sales
           </Link>
-          <Link className="btn" href="/locations">
+          <Link className={ui.button} href="/locations">
             Manage locations
           </Link>
-          <Link className="btn" href="/mobile">
+          <Link className={ui.button} href="/mobile">
             On Mobile?
           </Link>
         </div>
 
-        <div className="muted" style={{ marginTop: 12 }}>
+        <div className={ui.muted} style={{ marginTop: 12 }}>
           Tip: This dashboard is a great place to surface “dead stock”, “items not listed
           after X days”, and “platform profit split”.
         </div>
       </div>
     </div>
-    
   );
 }

@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -106,17 +107,33 @@ export default async function MobileInventoryDetailPage({ params }: Props) {
   };
 
   return (
-    <div className="mobilePg">
+    <div className={ui.mobilePage}>
       {/* Header */}
-      <div style={{ paddingTop: 10, paddingBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+      <div
+        style={{
+          paddingTop: 10,
+          paddingBottom: 14,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
         <Link
           href="/mobile/inventory"
-          style={{ fontSize: 26, textDecoration: "none", color: "var(--text)", lineHeight: 1, flexShrink: 0 }}
+          style={{
+            fontSize: 26,
+            textDecoration: "none",
+            color: "var(--text)",
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
         >
           ‹
         </Link>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{itemPlain.sku}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
+            {itemPlain.sku}
+          </div>
           <h1
             style={{
               fontSize: 18,

@@ -1,6 +1,7 @@
 // app/sales/new/page.tsx
 "use client";
 
+import { cx, ui } from "@/lib/ui";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -164,21 +165,21 @@ export default function CreateSalePage() {
   const totalSale = items.reduce((s, it) => s + (Number(it.salePrice) || 0), 0);
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Create Sale</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
             Add items, enter prices, then save.
           </div>
         </div>
 
-        <Link className="btn" href="/sales">
+        <Link className={ui.button} href="/sales">
           ← Sales List
         </Link>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr 1fr" }}>
           <label>
             Platform
@@ -270,7 +271,7 @@ export default function CreateSalePage() {
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         <div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
           <label style={{ flex: "1 1 280px" }}>
             Add Item
@@ -288,45 +289,47 @@ export default function CreateSalePage() {
             />
           </label>
 
-          <button className="btn" type="button" onClick={addSku}>
+          <button className={ui.button} type="button" onClick={addSku}>
             + Add Item
           </button>
 
-          <div className="muted" style={{ marginLeft: "auto" }}>
+          <div className={ui.muted} style={{ marginLeft: "auto" }}>
             Items: {items.length} • Total sale: £{totalSale.toFixed(2)}
           </div>
         </div>
 
         <div style={{ marginTop: 12 }}>
-          <table className="table">
-            <thead className="thead">
+          <table className={ui.table}>
+            <thead className={ui.thead}>
               <tr>
-                <th className="th" style={{ width: 160 }}>
+                <th className={ui.th} style={{ width: 160 }}>
                   Item SKU
                 </th>
-                <th className="th">Title</th>
-                <th className="th" style={{ width: 90 }}>
+                <th className={ui.th}>Title</th>
+                <th className={ui.th} style={{ width: 90 }}>
                   Loc
                 </th>
-                <th className="th" style={{ width: 130 }}>
+                <th className={ui.th} style={{ width: 130 }}>
                   Buy cost
                 </th>
-                <th className="th" style={{ width: 150 }}>
+                <th className={ui.th} style={{ width: 150 }}>
                   Sale price
                 </th>
-                <th className="th" style={{ width: 90, textAlign: "right" }}>
+                <th className={ui.th} style={{ width: 90, textAlign: "right" }}>
                   Remove
                 </th>
               </tr>
             </thead>
             <tbody>
               {items.map((it) => (
-                <tr className="tr" key={it.stockUnitId}>
-                  <td className="td">{it.sku}</td>
-                  <td className="td titleCell">{it.title}</td>
-                  <td className="td">{it.loc ?? <span className="muted">—</span>}</td>
-                  <td className="td">£{it.purchaseCost.toFixed(2)}</td>
-                  <td className="td">
+                <tr className={ui.tr} key={it.stockUnitId}>
+                  <td className={ui.td}>{it.sku}</td>
+                  <td className={cx(ui.td, ui.titleCell)}>{it.title}</td>
+                  <td className={ui.td}>
+                    {it.loc ?? <span className={ui.muted}>—</span>}
+                  </td>
+                  <td className={ui.td}>£{it.purchaseCost.toFixed(2)}</td>
+                  <td className={ui.td}>
                     <input
                       type="number"
                       step="0.01"
@@ -342,9 +345,9 @@ export default function CreateSalePage() {
                       style={{ width: "100%" }}
                     />
                   </td>
-                  <td className="td" style={{ textAlign: "right" }}>
+                  <td className={ui.td} style={{ textAlign: "right" }}>
                     <button
-                      className="iconBtn"
+                      className={ui.iconButton}
                       type="button"
                       onClick={() => removeItem(it.stockUnitId)}
                       title="Remove"
@@ -356,8 +359,8 @@ export default function CreateSalePage() {
               ))}
 
               {items.length === 0 && (
-                <tr className="tr">
-                  <td className="td muted" colSpan={6}>
+                <tr className={ui.tr}>
+                  <td className={cx(ui.td, ui.muted)} colSpan={6}>
                     No items added yet. Type a item SKU above and press Enter.
                   </td>
                 </tr>
@@ -366,8 +369,10 @@ export default function CreateSalePage() {
           </table>
         </div>
 
-        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 14 }}>
-          <button className="btn" type="button" onClick={saveSale}>
+        <div
+          style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 14 }}
+        >
+          <button className={ui.button} type="button" onClick={saveSale}>
             Save Sale
           </button>
         </div>

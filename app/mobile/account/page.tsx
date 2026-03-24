@@ -1,3 +1,4 @@
+import { cx, ui } from "@/lib/ui";
 import { prisma } from "@/lib/prisma";
 
 export default async function MobileAccountPage() {
@@ -12,37 +13,33 @@ export default async function MobileAccountPage() {
   ]);
 
   return (
-    <div className="mobilePg">
-      <div style={{ paddingTop: 10, paddingBottom: 16 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
-          Account
-        </h1>
-        <div style={{ marginTop: 4, fontSize: 13, color: "var(--muted)" }}>
-          Operational snapshot
-        </div>
+    <div className={ui.mobilePage}>
+      <div className="pt-2.5 pb-4">
+        <h1 className={ui.mobilePageTitle}>Account</h1>
+        <div className={ui.mobilePageSubtitle}>Operational snapshot</div>
       </div>
 
-      <div className="statGrid">
-        <div className="statTile">
-          <div className="statLabel">Sales records</div>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+      <div className={ui.statGrid}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Sales records</div>
+          <div className="mt-0.5 text-[30px] font-black tracking-[-0.5px]">
             {salesCount}
           </div>
         </div>
-        <div className="statTile">
-          <div className="statLabel">Inventory records</div>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Inventory records</div>
+          <div className="mt-0.5 text-[30px] font-black tracking-[-0.5px]">
             {stockCount}
           </div>
         </div>
-        <div className="statTile wide">
-          <div className="statLabel">Latest sale</div>
+        <div className={cx(ui.statTile, ui.statTileWide)}>
+          <div className={ui.statLabel}>Latest sale</div>
           {lastSale ? (
             <>
-              <div style={{ fontWeight: 800, fontSize: 16, marginTop: 4 }}>
+              <div className="mt-1 text-base font-extrabold">
                 {lastSale.platform || "Unknown"}
               </div>
-              <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3 }}>
+              <div className="text-app-muted mt-[3px] text-[13px]">
                 {new Date(lastSale.saleDate).toLocaleDateString("en-GB", {
                   day: "numeric",
                   month: "short",
@@ -52,9 +49,7 @@ export default async function MobileAccountPage() {
               </div>
             </>
           ) : (
-            <div style={{ fontWeight: 700, marginTop: 4, color: "var(--muted)" }}>
-              No sales yet
-            </div>
+            <div className="text-app-muted mt-1 font-bold">No sales yet</div>
           )}
         </div>
       </div>

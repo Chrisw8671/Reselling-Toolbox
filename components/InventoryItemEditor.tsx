@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/lib/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatStatus } from "@/lib/status";
@@ -580,7 +581,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
   }
 
   return (
-    <div className="tableWrap" style={{ padding: 16 }}>
+    <div className={ui.tableWrap} style={{ padding: 16 }}>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Workflow</div>
         <div
@@ -599,7 +600,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
               <button
                 key={STAGE_LABEL[stage]}
                 type="button"
-                className="btn"
+                className={ui.button}
                 onClick={() => moveToStage(stage)}
                 disabled={
                   stageBusy || isEditing || (isFuture && index > currentStageIndex + 1)
@@ -618,7 +619,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                   {isDone ? "✓ " : ""}
                   {STAGE_LABEL[stage]}
                 </div>
-                <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+                <div className={ui.muted} style={{ fontSize: 12, marginTop: 2 }}>
                   {getStageDate(item, stage) || "—"}
                 </div>
               </button>
@@ -627,7 +628,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
         </div>
 
         <div
-          className="muted"
+          className={ui.muted}
           style={{
             fontSize: 13,
             marginBottom: 12,
@@ -643,17 +644,20 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           item.archived) && (
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             {item.status === "RETURNED" && (
-              <span className="badge" style={{ background: "#f59e0b", color: "#111827" }}>
+              <span
+                className={ui.badge}
+                style={{ background: "#f59e0b", color: "#111827" }}
+              >
                 Return requested / Returned
               </span>
             )}
             {item.status === "WRITTEN_OFF" && (
-              <span className="badge" style={{ background: "#ef4444", color: "#fff" }}>
+              <span className={ui.badge} style={{ background: "#ef4444", color: "#fff" }}>
                 Damaged / Dead stock
               </span>
             )}
             {item.archived && (
-              <span className="badge" style={{ background: "#6b7280", color: "#fff" }}>
+              <span className={ui.badge} style={{ background: "#6b7280", color: "#fff" }}>
                 On hold (archived)
               </span>
             )}
@@ -662,7 +666,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
         <div style={{ fontWeight: 700, marginBottom: 8 }}>Preparation checklist</div>
         <div style={{ display: "grid", gap: 6 }}>
           {PREP_TASKS.map((task) => (
-            <div key={task} className="muted" style={{ fontSize: 13 }}>
+            <div key={task} className={ui.muted} style={{ fontSize: 13 }}>
               {preparationTaskState[task] ? "✅" : "⬜"} {task}
             </div>
           ))}
@@ -678,20 +682,20 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
           alignItems: "center",
         }}
       >
-        <div className="muted" style={{ fontSize: 13 }}>
+        <div className={ui.muted} style={{ fontSize: 13 }}>
           {item.archived ? "Archived item" : "Active item"} • Created: {item.createdAt}
           {isEditing && hasChanges ? " • Unsaved changes" : ""}
           {msg ? ` • ${msg}` : ""}
         </div>
 
         {!isEditing ? (
-          <button className="btn" type="button" onClick={startEdit}>
+          <button className={ui.button} type="button" onClick={startEdit}>
             Edit
           </button>
         ) : (
           <div style={{ display: "flex", gap: 10 }}>
             <button
-              className="btn"
+              className={ui.button}
               type="button"
               disabled={busy}
               onClick={discardChanges}
@@ -699,7 +703,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
               Discard changes
             </button>
             <button
-              className="btn primary"
+              className={ui.buttonPrimary}
               type="button"
               disabled={busy || !hasChanges}
               onClick={saveChanges}
@@ -715,7 +719,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Item details</div>
 
-        <div className="formGrid">
+        <div className={ui.formGrid}>
           <label>
             Title
             <input
@@ -820,7 +824,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Purchase metadata</div>
 
-        <div className="formGrid">
+        <div className={ui.formGrid}>
           <label>
             Purchased from
             <input
@@ -857,7 +861,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Purchase details</div>
 
-        <div className="formGrid">
+        <div className={ui.formGrid}>
           <label>
             Purchased date
             <input
@@ -908,7 +912,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Pricing</div>
 
-        <div className="formGrid">
+        <div className={ui.formGrid}>
           <label>
             Target margin %
             <input
@@ -1022,18 +1026,18 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
             />
           </label>
 
-          <button className="btn" type="button" onClick={createListing}>
+          <button className={ui.button} type="button" onClick={createListing}>
             {listingBusyId === "new" ? "Adding..." : "Add"}
           </button>
         </div>
 
         <div style={{ display: "grid", gap: 8 }}>
-          {listings.length === 0 && <div className="muted">No listings yet.</div>}
+          {listings.length === 0 && <div className={ui.muted}>No listings yet.</div>}
 
           {listings.map((listing) => (
             <div
               key={listing.id}
-              className="tableWrap"
+              className={ui.tableWrap}
               style={{ padding: 10, display: "grid", gap: 8 }}
             >
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1049,7 +1053,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                 >
                   {listing.platform || "Platform"}
                 </span>
-                <span className="muted">#{listing.listingId}</span>
+                <span className={ui.muted}>#{listing.listingId}</span>
               </div>
 
               <div
@@ -1168,7 +1172,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                 </label>
                 <div style={{ display: "flex", gap: 6 }}>
                   <button
-                    className="btn"
+                    className={ui.button}
                     type="button"
                     onClick={() => updateListing(listing)}
                     disabled={listingBusyId === listing.id}
@@ -1176,7 +1180,7 @@ export default function InventoryItemEditor({ item }: { item: Item }) {
                     Save
                   </button>
                   <button
-                    className="btn"
+                    className={ui.button}
                     type="button"
                     onClick={() => deleteListing(listing.id)}
                     disabled={listingBusyId === listing.id}

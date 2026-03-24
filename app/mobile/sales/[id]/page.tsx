@@ -1,3 +1,4 @@
+import { badgeClass, ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
@@ -116,26 +117,43 @@ export default async function SaleDetailPage({ params }: Props) {
 
   const revenue = itemsTotal + shippingCharged;
   const costs =
-    purchaseTotal + platformFees + shippingCost + otherCosts + refundAmount + returnShippingCost;
+    purchaseTotal +
+    platformFees +
+    shippingCost +
+    otherCosts +
+    refundAmount +
+    returnShippingCost;
   const profit = revenue - costs;
 
   return (
-    <div className="mobilePg">
+    <div className={ui.mobilePage}>
       {/* Header */}
       <div style={{ paddingTop: 10, paddingBottom: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <Link
             href="/mobile/sales"
-            style={{ fontSize: 26, textDecoration: "none", color: "var(--text)", lineHeight: 1, flexShrink: 0 }}
+            style={{
+              fontSize: 26,
+              textDecoration: "none",
+              color: "var(--text)",
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
           >
             &#x2039;
           </Link>
-          <h1 style={{ fontSize: 24, fontWeight: 900, margin: 0, letterSpacing: "-0.3px" }}>
+          <h1
+            style={{ fontSize: 24, fontWeight: 900, margin: 0, letterSpacing: "-0.3px" }}
+          >
             {sale.platform || "Sale"}
           </h1>
         </div>
         <div style={{ fontSize: 13, color: "var(--muted)", paddingLeft: 36 }}>
-          {sale.saleDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          {sale.saleDate.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
           {sale.orderRef ? ` \u00b7 ${sale.orderRef}` : ""}
           {" \u00b7 "}
           {FULFILLMENT_LABEL[sale.fulfillmentStatus as FulfillmentStatus]}
@@ -147,8 +165,8 @@ export default async function SaleDetailPage({ params }: Props) {
       </div>
 
       {/* Financial summary */}
-      <div className="mobileCard">
-        <div className="mobileCardTitle">Summary</div>
+      <div className={ui.mobileCard}>
+        <div className={ui.mobileCardTitle}>Summary</div>
 
         {/* Profit + Revenue */}
         <div
@@ -162,7 +180,15 @@ export default async function SaleDetailPage({ params }: Props) {
           }}
         >
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--muted)",
+                textTransform: "uppercase",
+                letterSpacing: "0.4px",
+              }}
+            >
               Profit
             </div>
             <div
@@ -177,7 +203,15 @@ export default async function SaleDetailPage({ params }: Props) {
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.4px" }}>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: "var(--muted)",
+                textTransform: "uppercase",
+                letterSpacing: "0.4px",
+              }}
+            >
               Revenue
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.3px" }}>
@@ -200,14 +234,24 @@ export default async function SaleDetailPage({ params }: Props) {
             ["Return shipping", `\u00a3${returnShippingCost.toFixed(2)}`],
           ].map(([label, value]) => (
             <div key={String(label)}>
-              <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{label}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
+                {label}
+              </div>
               <div style={{ fontWeight: 700, marginTop: 1 }}>{value}</div>
             </div>
           ))}
         </div>
 
         {sale.notes && (
-          <div style={{ marginTop: 12, fontSize: 13, color: "var(--muted)", borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+          <div
+            style={{
+              marginTop: 12,
+              fontSize: 13,
+              color: "var(--muted)",
+              borderTop: "1px solid var(--border)",
+              paddingTop: 10,
+            }}
+          >
             {sale.notes}
           </div>
         )}
@@ -225,7 +269,7 @@ export default async function SaleDetailPage({ params }: Props) {
 
       {/* Items as cards */}
       <div style={{ marginBottom: 14 }}>
-        <div className="sectionLabel" style={{ marginBottom: 8 }}>
+        <div className={ui.sectionLabel} style={{ marginBottom: 8 }}>
           Items ({lines.length})
         </div>
         <div style={{ display: "grid", gap: 8 }}>
@@ -256,7 +300,7 @@ export default async function SaleDetailPage({ params }: Props) {
                   Buy £{l.buy.toFixed(2)} &rarr; Sell £{l.sell.toFixed(2)}
                 </div>
                 <span
-                  className={`badge ${l.itemProfit >= 0 ? "profitPos" : "profitNeg"}`}
+                  className={badgeClass(l.itemProfit >= 0 ? "profitPos" : "profitNeg")}
                   style={{ fontSize: 12 }}
                 >
                   £{l.itemProfit.toFixed(2)}

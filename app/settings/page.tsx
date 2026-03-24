@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 
 function SettingsCard({
@@ -36,13 +37,13 @@ function SettingsCard({
 
         <div style={{ minWidth: 0 }}>
           <div style={{ fontWeight: 800, fontSize: 15 }}>{title}</div>
-          <div className="muted" style={{ marginTop: 4, fontSize: 13 }}>
+          <div className={ui.muted} style={{ marginTop: 4, fontSize: 13 }}>
             {description}
           </div>
         </div>
       </div>
 
-      <div className="muted" style={{ fontSize: 18, flex: "0 0 auto" }}>
+      <div className={ui.muted} style={{ fontSize: 18, flex: "0 0 auto" }}>
         →
       </div>
     </>
@@ -77,20 +78,20 @@ function SettingsCard({
 
 export default function SettingsPage() {
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0 }}>Settings</h1>
-          <div className="muted" style={{ marginTop: 6 }}>
+          <div className={ui.muted} style={{ marginTop: 6 }}>
             Manage reference data, exports, and archived records.
           </div>
         </div>
       </div>
 
       {/* Export */}
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Export</div>
-        <div className="muted" style={{ marginBottom: 12 }}>
+        <div className={ui.muted} style={{ marginBottom: 12 }}>
           Download your database data as Excel spreadsheets.
         </div>
 
@@ -114,11 +115,11 @@ export default function SettingsPage() {
       </div>
 
       {/* Reference Data */}
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>
           Reference Data
         </div>
-        <div className="muted" style={{ marginBottom: 12 }}>
+        <div className={ui.muted} style={{ marginBottom: 12 }}>
           Manage reusable lists used across the app.
         </div>
 
@@ -133,9 +134,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Archive */}
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Archive</div>
-        <div className="muted" style={{ marginBottom: 12 }}>
+        <div className={ui.muted} style={{ marginBottom: 12 }}>
           View and manage archived records.
         </div>
 
