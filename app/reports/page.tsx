@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -374,15 +375,14 @@ export default async function ReportsPage() {
     .slice(0, 12);
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Reports</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
             Overview + charts for performance and stock health
           </div>
         </div>
-
       </div>
 
       <div
@@ -393,71 +393,71 @@ export default async function ReportsPage() {
           marginBottom: 16,
         }}
       >
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Total Profit</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Total Profit</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>£{totalProfit.toFixed(2)}</div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Profit This Month</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Profit This Month</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>£{monthProfit.toFixed(2)}</div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Inventory Value (Cost)</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Inventory Value (Cost)</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>
             £{inventoryValue.toFixed(2)}
           </div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Sell-Through</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Sell-Through</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{sellThrough.toFixed(1)}%</div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Dead Stock (90+ days)</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Dead Stock (90+ days)</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{deadStock}</div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Return Rate (per sale)</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Return Rate (per sale)</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>{returnRate.toFixed(1)}%</div>
         </div>
 
-        <div className="tableWrap" style={{ padding: 16 }}>
-          <div className="muted">Total Return Cost</div>
+        <div className={ui.tableWrap} style={{ padding: 16 }}>
+          <div className={ui.muted}>Total Return Cost</div>
           <div style={{ fontSize: 24, fontWeight: 800 }}>
             £{totalReturnCost.toFixed(2)}
           </div>
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
           Margin impact by platform
         </div>
-        <table className="table">
-          <thead className="thead">
+        <table className={ui.table}>
+          <thead className={ui.thead}>
             <tr>
-              <th className="th">Platform</th>
-              <th className="th">Return Rate</th>
-              <th className="th">Return Cost</th>
-              <th className="th">Margin Impact</th>
+              <th className={ui.th}>Platform</th>
+              <th className={ui.th}>Return Rate</th>
+              <th className={ui.th}>Return Cost</th>
+              <th className={ui.th}>Margin Impact</th>
             </tr>
           </thead>
           <tbody>
             {marginImpactByPlatform.map((r) => (
-              <tr className="tr" key={r.platform}>
-                <td className="td">{r.platform}</td>
-                <td className="td">{r.returnRatePct.toFixed(1)}%</td>
-                <td className="td">£{r.returnCost.toFixed(2)}</td>
-                <td className="td">{r.marginImpactPct.toFixed(1)}%</td>
+              <tr className={ui.tr} key={r.platform}>
+                <td className={ui.td}>{r.platform}</td>
+                <td className={ui.td}>{r.returnRatePct.toFixed(1)}%</td>
+                <td className={ui.td}>£{r.returnCost.toFixed(2)}</td>
+                <td className={ui.td}>{r.marginImpactPct.toFixed(1)}%</td>
               </tr>
             ))}
             {marginImpactByPlatform.length === 0 && (
-              <tr className="tr">
-                <td className="td" colSpan={4}>
+              <tr className={ui.tr}>
+                <td className={ui.td} colSpan={4}>
                   No platform data yet.
                 </td>
               </tr>
@@ -466,7 +466,7 @@ export default async function ReportsPage() {
         </table>
       </div>
 
-      <div className="tableWrap" style={{ marginBottom: 16, overflowX: "auto" }}>
+      <div className={ui.tableWrap} style={{ marginBottom: 16, overflowX: "auto" }}>
         <div
           style={{
             padding: "12px 16px",
@@ -477,7 +477,7 @@ export default async function ReportsPage() {
           Top movers (rolling 30 / 60 / 90 days)
         </div>
 
-        <table className="table">
+        <table className={ui.table}>
           <thead>
             <tr>
               <th>Product</th>
@@ -491,7 +491,7 @@ export default async function ReportsPage() {
           <tbody>
             {topMovers.length === 0 ? (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={6} className={ui.muted}>
                   No sales with linked products in the last 90 days.
                 </td>
               </tr>
@@ -519,13 +519,13 @@ export default async function ReportsPage() {
         agingBuckets={buckets}
       />
 
-      <div className="tableWrap" style={{ padding: 16, marginTop: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginTop: 16 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>
           Platform sell-through and inventory slices
         </div>
 
         <div style={{ overflowX: "auto" }}>
-          <table className="table">
+          <table className={ui.table}>
             <thead>
               <tr>
                 <th>Platform</th>
@@ -547,7 +547,7 @@ export default async function ReportsPage() {
               ))}
               {platformSellThroughSlices.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="muted">
+                  <td colSpan={5} className={ui.muted}>
                     No platform listing data yet.
                   </td>
                 </tr>
@@ -555,7 +555,7 @@ export default async function ReportsPage() {
             </tbody>
           </table>
         </div>
-        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}

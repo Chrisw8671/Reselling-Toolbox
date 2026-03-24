@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/lib/ui";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatStatus } from "@/lib/status";
@@ -18,7 +19,10 @@ const CONDITIONS = [
 ];
 
 function formatCondition(value: string) {
-  return value.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  return value
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -181,7 +185,15 @@ function Section({
           userSelect: "none",
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
+        <span
+          style={{
+            fontWeight: 700,
+            fontSize: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <span style={{ fontSize: 18 }}>{icon}</span>
           {title}
           {badge !== undefined && (
@@ -245,13 +257,17 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
   const [purchaseUrl, setPurchaseUrl] = useState(item.purchaseUrl ?? "");
   const [targetMarginPct, setTargetMarginPct] = useState(
     item.targetMarginPct === "" || item.targetMarginPct === undefined
-      ? "" : String(item.targetMarginPct),
+      ? ""
+      : String(item.targetMarginPct),
   );
   const [recommendedPrice, setRecommendedPrice] = useState(
     item.recommendedPrice === "" || item.recommendedPrice === undefined
-      ? "" : String(item.recommendedPrice),
+      ? ""
+      : String(item.recommendedPrice),
   );
-  const [lastPricingEvalAt, setLastPricingEvalAt] = useState(item.lastPricingEvalAt ?? "");
+  const [lastPricingEvalAt, setLastPricingEvalAt] = useState(
+    item.lastPricingEvalAt ?? "",
+  );
 
   // Location
   const [locations, setLocations] = useState<LocationOption[]>([]);
@@ -320,10 +336,19 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
   // Sync location dropdown when locations load
   useEffect(() => {
     const current = (locationCode ?? "").trim();
-    if (!current) { setLocationChoice(""); setLocationCustom(""); return; }
+    if (!current) {
+      setLocationChoice("");
+      setLocationCustom("");
+      return;
+    }
     const match = locations.find((l) => l.code === current);
-    if (match) { setLocationChoice(match.code); setLocationCustom(""); }
-    else { setLocationChoice("__custom__"); setLocationCustom(current); }
+    if (match) {
+      setLocationChoice(match.code);
+      setLocationCustom("");
+    } else {
+      setLocationChoice("__custom__");
+      setLocationCustom(current);
+    }
   }, [locations, locationCode]);
 
   // Reset on exit edit
@@ -343,11 +368,13 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
       setPurchaseUrl(item.purchaseUrl ?? "");
       setTargetMarginPct(
         item.targetMarginPct === "" || item.targetMarginPct === undefined
-          ? "" : String(item.targetMarginPct),
+          ? ""
+          : String(item.targetMarginPct),
       );
       setRecommendedPrice(
         item.recommendedPrice === "" || item.recommendedPrice === undefined
-          ? "" : String(item.recommendedPrice),
+          ? ""
+          : String(item.recommendedPrice),
       );
       setLastPricingEvalAt(item.lastPricingEvalAt ?? "");
       setLocationCode(item.locationCode);
@@ -371,11 +398,35 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
       purchasedFrom !== (item.purchasedFrom ?? "") ||
       purchaseRef !== (item.purchaseRef ?? "") ||
       purchaseUrl !== (item.purchaseUrl ?? "") ||
-      targetMarginPct !== (item.targetMarginPct === "" || item.targetMarginPct === undefined ? "" : String(item.targetMarginPct)) ||
-      recommendedPrice !== (item.recommendedPrice === "" || item.recommendedPrice === undefined ? "" : String(item.recommendedPrice)) ||
+      targetMarginPct !==
+        (item.targetMarginPct === "" || item.targetMarginPct === undefined
+          ? ""
+          : String(item.targetMarginPct)) ||
+      recommendedPrice !==
+        (item.recommendedPrice === "" || item.recommendedPrice === undefined
+          ? ""
+          : String(item.recommendedPrice)) ||
       lastPricingEvalAt !== (item.lastPricingEvalAt ?? "")
     );
-  }, [titleOverride, condition, notes, purchaseCost, extraCost, purchasedAt, locationCode, archived, brand, size, purchasedFrom, purchaseRef, purchaseUrl, targetMarginPct, recommendedPrice, lastPricingEvalAt, item]);
+  }, [
+    titleOverride,
+    condition,
+    notes,
+    purchaseCost,
+    extraCost,
+    purchasedAt,
+    locationCode,
+    archived,
+    brand,
+    size,
+    purchasedFrom,
+    purchaseRef,
+    purchaseUrl,
+    targetMarginPct,
+    recommendedPrice,
+    lastPricingEvalAt,
+    item,
+  ]);
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
@@ -391,17 +442,37 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
     try {
       let res: Response;
       if (stage === "LISTED") {
-        res = await fetch("/api/stock/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku: item.sku, status: "LISTED" }) });
+        res = await fetch("/api/stock/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sku: item.sku, status: "LISTED" }),
+        });
       } else if (stage === "SOLD") {
-        res = await fetch("/api/stock/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku: item.sku, status: "SOLD" }) });
+        res = await fetch("/api/stock/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sku: item.sku, status: "SOLD" }),
+        });
       } else if (stage === "SHIPPED") {
         if (!item.saleId) throw new Error("Link a sale before shipping.");
-        res = await fetch(`/api/sales/${item.saleId}/fulfillment`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fulfillmentStatus: "SHIPPED" }) });
+        res = await fetch(`/api/sales/${item.saleId}/fulfillment`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fulfillmentStatus: "SHIPPED" }),
+        });
       } else if (stage === "COMPLETED") {
         if (!item.saleId) throw new Error("Link a sale before completing.");
-        res = await fetch(`/api/sales/${item.saleId}/fulfillment`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fulfillmentStatus: "DELIVERED" }) });
+        res = await fetch(`/api/sales/${item.saleId}/fulfillment`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fulfillmentStatus: "DELIVERED" }),
+        });
       } else {
-        res = await fetch("/api/stock/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sku: item.sku, status: "IN_STOCK" }) });
+        res = await fetch("/api/stock/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sku: item.sku, status: "IN_STOCK" }),
+        });
       }
       if (!res.ok) throw new Error("Failed to update stage");
       router.refresh();
@@ -426,11 +497,16 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
     if (!purchasedAt) missing.push("Purchased date");
 
     const targetNum = targetMarginPct.trim() === "" ? null : Number(targetMarginPct);
-    if (targetNum !== null && (!Number.isFinite(targetNum) || targetNum < 0)) missing.push("Target margin %");
+    if (targetNum !== null && (!Number.isFinite(targetNum) || targetNum < 0))
+      missing.push("Target margin %");
     const recNum = recommendedPrice.trim() === "" ? null : Number(recommendedPrice);
-    if (recNum !== null && (!Number.isFinite(recNum) || recNum < 0)) missing.push("Recommended price");
+    if (recNum !== null && (!Number.isFinite(recNum) || recNum < 0))
+      missing.push("Recommended price");
 
-    if (missing.length) { alert("Please fix:\n\n• " + missing.join("\n• ")); return; }
+    if (missing.length) {
+      alert("Please fix:\n\n• " + missing.join("\n• "));
+      return;
+    }
 
     setBusy(true);
     try {
@@ -453,12 +529,16 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
           purchaseRef: purchaseRef.trim(),
           purchaseUrl: purchaseUrl.trim(),
           targetMarginPct: targetMarginPct.trim() === "" ? "" : Number(targetMarginPct),
-          recommendedPrice: recommendedPrice.trim() === "" ? "" : Number(recommendedPrice),
+          recommendedPrice:
+            recommendedPrice.trim() === "" ? "" : Number(recommendedPrice),
           lastPricingEvalAt: lastPricingEvalAt.trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data?.error ?? "Save failed"); return; }
+      if (!res.ok) {
+        alert(data?.error ?? "Save failed");
+        return;
+      }
       setMsg("Saved ✓");
       setIsEditing(false);
       router.refresh();
@@ -468,20 +548,44 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
   }
 
   async function createListing() {
-    if (!newPlatform.trim() || !newListingId.trim()) { alert("Platform and Listing ID are required."); return; }
+    if (!newPlatform.trim() || !newListingId.trim()) {
+      alert("Platform and Listing ID are required.");
+      return;
+    }
     const askNum = Number(newAskPrice);
-    if (!Number.isFinite(askNum) || askNum < 0) { alert("Ask price must be a number ≥ 0."); return; }
+    if (!Number.isFinite(askNum) || askNum < 0) {
+      alert("Ask price must be a number ≥ 0.");
+      return;
+    }
     setListingBusyId("new");
     try {
       const res = await fetch("/api/listings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stockUnitId: item.stockUnitId, platform: newPlatform, listingId: newListingId, url: newUrl, askPrice: askNum, status: newStatus, listedAt: newListedAt, endedAt: newEndedAt || null }),
+        body: JSON.stringify({
+          stockUnitId: item.stockUnitId,
+          platform: newPlatform,
+          listingId: newListingId,
+          url: newUrl,
+          askPrice: askNum,
+          status: newStatus,
+          listedAt: newListedAt,
+          endedAt: newEndedAt || null,
+        }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data?.error ?? "Failed to create listing"); return; }
+      if (!res.ok) {
+        alert(data?.error ?? "Failed to create listing");
+        return;
+      }
       router.refresh();
-      setNewPlatform(""); setNewListingId(""); setNewUrl(""); setNewAskPrice("0"); setNewStatus("ACTIVE"); setNewEndedAt(""); setShowNewListingForm(false);
+      setNewPlatform("");
+      setNewListingId("");
+      setNewUrl("");
+      setNewAskPrice("0");
+      setNewStatus("ACTIVE");
+      setNewEndedAt("");
+      setShowNewListingForm(false);
     } finally {
       setListingBusyId("");
     }
@@ -490,9 +594,20 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
   async function updateListing(listing: ListingRow) {
     setListingBusyId(listing.id);
     try {
-      const res = await fetch("/api/listings/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...listing, askPrice: Number(listing.askPrice), endedAt: listing.endedAt || null }) });
+      const res = await fetch("/api/listings/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...listing,
+          askPrice: Number(listing.askPrice),
+          endedAt: listing.endedAt || null,
+        }),
+      });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data?.error ?? "Failed to update listing"); return; }
+      if (!res.ok) {
+        alert(data?.error ?? "Failed to update listing");
+        return;
+      }
       router.refresh();
       setExpandedListingId(null);
     } finally {
@@ -504,9 +619,16 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
     if (!confirm("Delete this listing?")) return;
     setListingBusyId(id);
     try {
-      const res = await fetch("/api/listings/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      const res = await fetch("/api/listings/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { alert(data?.error ?? "Failed to delete listing"); return; }
+      if (!res.ok) {
+        alert(data?.error ?? "Failed to delete listing");
+        return;
+      }
       router.refresh();
     } finally {
       setListingBusyId("");
@@ -558,7 +680,7 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
               {item.titleOverride || item.sku}
             </div>
             <span
-              className="statusPill"
+              className={ui.statusPill}
               style={{
                 background: `color-mix(in srgb, ${statusColor} 14%, var(--panel-2))`,
                 color: statusColor,
@@ -590,18 +712,28 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
           {/* Prices row */}
           <div style={{ marginTop: 8, display: "flex", gap: 16, alignItems: "baseline" }}>
             <div>
-              <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>Cost </span>
-              <span style={{ fontSize: 16, fontWeight: 900 }}>£{Number(item.purchaseCost).toFixed(2)}</span>
+              <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
+                Cost{" "}
+              </span>
+              <span style={{ fontSize: 16, fontWeight: 900 }}>
+                £{Number(item.purchaseCost).toFixed(2)}
+              </span>
             </div>
             {listPrice !== null && (
               <div>
-                <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>List </span>
-                <span style={{ fontSize: 16, fontWeight: 900 }}>£{listPrice.toFixed(2)}</span>
+                <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
+                  List{" "}
+                </span>
+                <span style={{ fontSize: 16, fontWeight: 900 }}>
+                  £{listPrice.toFixed(2)}
+                </span>
               </div>
             )}
             {listPrice !== null && Number(item.purchaseCost) > 0 && (
               <div>
-                <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>Margin </span>
+                <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
+                  Margin{" "}
+                </span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "var(--success)" }}>
                   £{(listPrice - Number(item.purchaseCost)).toFixed(2)}
                 </span>
@@ -622,36 +754,62 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
           >
             {!isEditing ? (
               <button
-                className="btn"
+                className={ui.button}
                 type="button"
-                onClick={() => { setIsEditing(true); setMsg(""); }}
-                style={{ height: 38, fontSize: 13, padding: "0 16px", width: "auto", minHeight: 0 }}
+                onClick={() => {
+                  setIsEditing(true);
+                  setMsg("");
+                }}
+                style={{
+                  height: 38,
+                  fontSize: 13,
+                  padding: "0 16px",
+                  width: "auto",
+                  minHeight: 0,
+                }}
               >
                 ✎ Edit item
               </button>
             ) : (
               <>
                 <button
-                  className="btn primary"
+                  className={ui.buttonPrimary}
                   type="button"
                   onClick={saveChanges}
                   disabled={busy || !hasChanges}
-                  style={{ height: 38, fontSize: 13, padding: "0 16px", width: "auto", minHeight: 0, opacity: busy || !hasChanges ? 0.6 : 1 }}
+                  style={{
+                    height: 38,
+                    fontSize: 13,
+                    padding: "0 16px",
+                    width: "auto",
+                    minHeight: 0,
+                    opacity: busy || !hasChanges ? 0.6 : 1,
+                  }}
                 >
                   {busy ? "Saving…" : "Save changes"}
                 </button>
                 <button
-                  className="btn"
+                  className={ui.button}
                   type="button"
-                  onClick={() => { if (!hasChanges || confirm("Discard changes?")) setIsEditing(false); }}
-                  style={{ height: 38, fontSize: 13, padding: "0 16px", width: "auto", minHeight: 0 }}
+                  onClick={() => {
+                    if (!hasChanges || confirm("Discard changes?")) setIsEditing(false);
+                  }}
+                  style={{
+                    height: 38,
+                    fontSize: 13,
+                    padding: "0 16px",
+                    width: "auto",
+                    minHeight: 0,
+                  }}
                 >
                   Discard
                 </button>
               </>
             )}
             {msg && (
-              <span style={{ fontSize: 13, color: "var(--success)", fontWeight: 600 }}>{msg}</span>
+              <span style={{ fontSize: 13, color: "var(--success)", fontWeight: 600 }}>
+                {msg}
+              </span>
             )}
             {isEditing && hasChanges && !msg && (
               <span style={{ fontSize: 12, color: "var(--muted)" }}>Unsaved changes</span>
@@ -671,7 +829,16 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
           boxShadow: "var(--shadow-sm)",
         }}
       >
-        <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--muted)", marginBottom: 10 }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            color: "var(--muted)",
+            marginBottom: 10,
+          }}
+        >
           Workflow stage
         </div>
 
@@ -709,13 +876,13 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                   border: isCurrent
                     ? "2px solid var(--accent)"
                     : isDone
-                    ? "1px solid color-mix(in srgb, var(--success) 40%, var(--border))"
-                    : "1px solid var(--border)",
+                      ? "1px solid color-mix(in srgb, var(--success) 40%, var(--border))"
+                      : "1px solid var(--border)",
                   background: isCurrent
                     ? "var(--accent-soft)"
                     : isDone
-                    ? "color-mix(in srgb, var(--success) 8%, var(--panel))"
-                    : "var(--panel-2)",
+                      ? "color-mix(in srgb, var(--success) 8%, var(--panel))"
+                      : "var(--panel-2)",
                   cursor: canClick ? "pointer" : "default",
                   opacity: isFuture && index > currentStageIndex + 1 ? 0.5 : 1,
                   WebkitTapHighlightColor: "transparent",
@@ -728,14 +895,20 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                   style={{
                     fontSize: 11,
                     fontWeight: 700,
-                    color: isCurrent ? "var(--accent)" : isDone ? "var(--success)" : "var(--muted)",
+                    color: isCurrent
+                      ? "var(--accent)"
+                      : isDone
+                        ? "var(--success)"
+                        : "var(--muted)",
                     whiteSpace: "nowrap",
                   }}
                 >
                   {STAGE_LABEL[stage]}
                 </span>
                 {date && (
-                  <span style={{ fontSize: 10, color: "var(--muted)", whiteSpace: "nowrap" }}>
+                  <span
+                    style={{ fontSize: 10, color: "var(--muted)", whiteSpace: "nowrap" }}
+                  >
                     {date}
                   </span>
                 )}
@@ -753,21 +926,38 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
           }}
         >
           {daysInCurrentStage !== null ? (
-            <>Days in {STAGE_LABEL[currentStage].toLowerCase()}: <strong>{daysInCurrentStage}</strong>{isStale ? " · Stale (30+ days)" : ""}</>
-          ) : "Stage date unavailable"}
+            <>
+              Days in {STAGE_LABEL[currentStage].toLowerCase()}:{" "}
+              <strong>{daysInCurrentStage}</strong>
+              {isStale ? " · Stale (30+ days)" : ""}
+            </>
+          ) : (
+            "Stage date unavailable"
+          )}
         </div>
 
         {/* Status badges for returned/written-off/archived */}
-        {(item.status === "RETURNED" || item.status === "WRITTEN_OFF" || item.archived) && (
+        {(item.status === "RETURNED" ||
+          item.status === "WRITTEN_OFF" ||
+          item.archived) && (
           <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
             {item.status === "RETURNED" && (
-              <span className="badge" style={{ background: "#f59e0b", color: "#111827" }}>Returned</span>
+              <span
+                className={ui.badge}
+                style={{ background: "#f59e0b", color: "#111827" }}
+              >
+                Returned
+              </span>
             )}
             {item.status === "WRITTEN_OFF" && (
-              <span className="badge" style={{ background: "#ef4444", color: "#fff" }}>Written off</span>
+              <span className={ui.badge} style={{ background: "#ef4444", color: "#fff" }}>
+                Written off
+              </span>
             )}
             {item.archived && (
-              <span className="badge" style={{ background: "#6b7280", color: "#fff" }}>Archived</span>
+              <span className={ui.badge} style={{ background: "#6b7280", color: "#fff" }}>
+                Archived
+              </span>
             )}
           </div>
         )}
@@ -792,7 +982,9 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                 color: prepState[task] ? "var(--text)" : "var(--muted)",
               }}
             >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{prepState[task] ? "✅" : "⬜"}</span>
+              <span style={{ fontSize: 18, lineHeight: 1 }}>
+                {prepState[task] ? "✅" : "⬜"}
+              </span>
               {task}
             </div>
           ))}
@@ -801,10 +993,14 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
 
       {/* ── Item details ── */}
       <Section title="Item details" icon="📋" defaultOpen>
-        <div className="mGrid1" style={{ paddingTop: 12 }}>
+        <div className={ui.mGrid1} style={{ paddingTop: 12 }}>
           <label>
             Title
-            <input value={titleOverride} onChange={(e) => setTitleOverride(e.target.value)} disabled={!isEditing} />
+            <input
+              value={titleOverride}
+              onChange={(e) => setTitleOverride(e.target.value)}
+              disabled={!isEditing}
+            />
           </label>
           <label>
             Status
@@ -812,18 +1008,34 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
           </label>
           <label>
             Condition
-            <select value={condition} onChange={(e) => setCondition(e.target.value)} disabled={!isEditing}>
+            <select
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              disabled={!isEditing}
+            >
               <option value="">Select condition…</option>
-              {CONDITIONS.map((c) => <option key={c} value={c}>{formatCondition(c)}</option>)}
+              {CONDITIONS.map((c) => (
+                <option key={c} value={c}>
+                  {formatCondition(c)}
+                </option>
+              ))}
             </select>
           </label>
           <label>
             Brand
-            <input value={brand} onChange={(e) => setBrand(e.target.value)} disabled={!isEditing} />
+            <input
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              disabled={!isEditing}
+            />
           </label>
           <label>
             Size
-            <input value={size} onChange={(e) => setSize(e.target.value)} disabled={!isEditing} />
+            <input
+              value={size}
+              onChange={(e) => setSize(e.target.value)}
+              disabled={!isEditing}
+            />
           </label>
           <label>
             Location
@@ -832,14 +1044,25 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
               onChange={(e) => {
                 const v = e.target.value;
                 setLocationChoice(v);
-                if (v === "__custom__") { setLocationCustom(""); setLocationCode(""); }
-                else if (v) { setLocationCustom(""); setLocationCode(v); }
-                else { setLocationCustom(""); setLocationCode(""); }
+                if (v === "__custom__") {
+                  setLocationCustom("");
+                  setLocationCode("");
+                } else if (v) {
+                  setLocationCustom("");
+                  setLocationCode(v);
+                } else {
+                  setLocationCustom("");
+                  setLocationCode("");
+                }
               }}
               disabled={!isEditing}
             >
               <option value="">Select location…</option>
-              {locations.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+              {locations.map((l) => (
+                <option key={l.code} value={l.code}>
+                  {l.label}
+                </option>
+              ))}
               <option value="__custom__">Other / type manually</option>
             </select>
           </label>
@@ -848,7 +1071,10 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
               Location (custom)
               <input
                 value={locationCustom}
-                onChange={(e) => { setLocationCustom(e.target.value); setLocationCode(e.target.value); }}
+                onChange={(e) => {
+                  setLocationCustom(e.target.value);
+                  setLocationCode(e.target.value);
+                }}
                 placeholder="e.g. BOX-99"
                 disabled={!isEditing}
               />
@@ -856,7 +1082,11 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
           )}
           <label>
             Archive status
-            <select value={archived ? "1" : "0"} onChange={(e) => setArchived(e.target.value === "1")} disabled={!isEditing}>
+            <select
+              value={archived ? "1" : "0"}
+              onChange={(e) => setArchived(e.target.value === "1")}
+              disabled={!isEditing}
+            >
               <option value="0">Active</option>
               <option value="1">Archived</option>
             </select>
@@ -866,52 +1096,105 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
 
       {/* ── Purchase info ── */}
       <Section title="Purchase" icon="🛒" defaultOpen={false}>
-        <div className="mGrid1" style={{ paddingTop: 12 }}>
+        <div className={ui.mGrid1} style={{ paddingTop: 12 }}>
           <label>
             Purchased from
-            <input value={purchasedFrom} onChange={(e) => setPurchasedFrom(e.target.value)} disabled={!isEditing} placeholder="e.g. Vinted, eBay" />
+            <input
+              value={purchasedFrom}
+              onChange={(e) => setPurchasedFrom(e.target.value)}
+              disabled={!isEditing}
+              placeholder="e.g. Vinted, eBay"
+            />
           </label>
           <label>
             Purchase date
-            <input type="date" value={purchasedAt} onChange={(e) => setPurchasedAt(e.target.value)} disabled={!isEditing} />
+            <input
+              type="date"
+              value={purchasedAt}
+              onChange={(e) => setPurchasedAt(e.target.value)}
+              disabled={!isEditing}
+            />
           </label>
-          <div className="mGrid2">
+          <div className={ui.mGrid2}>
             <label>
               Cost (£)
-              <input type="number" step="0.01" value={purchaseCost} onChange={(e) => setPurchaseCost(e.target.value)} disabled={!isEditing} />
+              <input
+                type="number"
+                step="0.01"
+                value={purchaseCost}
+                onChange={(e) => setPurchaseCost(e.target.value)}
+                disabled={!isEditing}
+              />
             </label>
             <label>
               Extra cost (£)
-              <input type="number" step="0.01" value={extraCost} onChange={(e) => setExtraCost(e.target.value)} disabled={!isEditing} />
+              <input
+                type="number"
+                step="0.01"
+                value={extraCost}
+                onChange={(e) => setExtraCost(e.target.value)}
+                disabled={!isEditing}
+              />
             </label>
           </div>
           <label>
             Purchase reference
-            <input value={purchaseRef} onChange={(e) => setPurchaseRef(e.target.value)} disabled={!isEditing} placeholder="Order / receipt ref" />
+            <input
+              value={purchaseRef}
+              onChange={(e) => setPurchaseRef(e.target.value)}
+              disabled={!isEditing}
+              placeholder="Order / receipt ref"
+            />
           </label>
           <label>
             Purchase URL
-            <input value={purchaseUrl} onChange={(e) => setPurchaseUrl(e.target.value)} disabled={!isEditing} placeholder="https://…" />
+            <input
+              value={purchaseUrl}
+              onChange={(e) => setPurchaseUrl(e.target.value)}
+              disabled={!isEditing}
+              placeholder="https://…"
+            />
           </label>
         </div>
       </Section>
 
       {/* ── Pricing ── */}
       <Section title="Pricing" icon="💰" defaultOpen={!!item.recommendedPrice}>
-        <div className="mGrid1" style={{ paddingTop: 12 }}>
-          <div className="mGrid2">
+        <div className={ui.mGrid1} style={{ paddingTop: 12 }}>
+          <div className={ui.mGrid2}>
             <label>
               Target margin (%)
-              <input type="number" step="0.01" min={0} value={targetMarginPct} onChange={(e) => setTargetMarginPct(e.target.value)} disabled={!isEditing} placeholder="e.g. 25" />
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={targetMarginPct}
+                onChange={(e) => setTargetMarginPct(e.target.value)}
+                disabled={!isEditing}
+                placeholder="e.g. 25"
+              />
             </label>
             <label>
               Recommended price (£)
-              <input type="number" step="0.01" min={0} value={recommendedPrice} onChange={(e) => setRecommendedPrice(e.target.value)} disabled={!isEditing} placeholder="e.g. 39.99" />
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={recommendedPrice}
+                onChange={(e) => setRecommendedPrice(e.target.value)}
+                disabled={!isEditing}
+                placeholder="e.g. 39.99"
+              />
             </label>
           </div>
           <label>
             Pricing last evaluated
-            <input type="date" value={lastPricingEvalAt} onChange={(e) => setLastPricingEvalAt(e.target.value)} disabled={!isEditing} />
+            <input
+              type="date"
+              value={lastPricingEvalAt}
+              onChange={(e) => setLastPricingEvalAt(e.target.value)}
+              disabled={!isEditing}
+            />
           </label>
         </div>
       </Section>
@@ -930,10 +1213,22 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
       </Section>
 
       {/* ── Listings ── */}
-      <Section title="Listings" icon="🏷️" badge={listings.length || undefined} defaultOpen={listings.length > 0}>
+      <Section
+        title="Listings"
+        icon="🏷️"
+        badge={listings.length || undefined}
+        defaultOpen={listings.length > 0}
+      >
         <div style={{ paddingTop: 12, display: "grid", gap: 10 }}>
           {listings.length === 0 && (
-            <div style={{ fontSize: 13, color: "var(--muted)", textAlign: "center", padding: "8px 0" }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+                textAlign: "center",
+                padding: "8px 0",
+              }}
+            >
               No listings yet
             </div>
           )}
@@ -982,31 +1277,61 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                     {listing.platform || "?"}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>£{Number(listing.askPrice).toFixed(2)}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>
+                      £{Number(listing.askPrice).toFixed(2)}
+                    </div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>
                       #{listing.listingId} · {listing.status} · {listing.listedAt}
                     </div>
                   </div>
-                  <span style={{ color: "var(--muted)", fontSize: 16, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.2s" }}>›</span>
+                  <span
+                    style={{
+                      color: "var(--muted)",
+                      fontSize: 16,
+                      transform: isExpanded ? "rotate(90deg)" : "none",
+                      transition: "transform 0.2s",
+                    }}
+                  >
+                    ›
+                  </span>
                 </button>
 
                 {/* Expanded edit form */}
                 {isExpanded && (
-                  <div style={{ padding: "0 13px 13px", borderTop: "1px solid var(--border)" }}>
-                    <div className="mGrid1" style={{ paddingTop: 12 }}>
-                      <div className="mGrid2">
+                  <div
+                    style={{
+                      padding: "0 13px 13px",
+                      borderTop: "1px solid var(--border)",
+                    }}
+                  >
+                    <div className={ui.mGrid1} style={{ paddingTop: 12 }}>
+                      <div className={ui.mGrid2}>
                         <label>
                           Platform
                           <input
                             value={listing.platform}
-                            onChange={(e) => { const v = e.target.value; setListings((p) => p.map((x) => x.id === listing.id ? { ...x, platform: v } : x)); }}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setListings((p) =>
+                                p.map((x) =>
+                                  x.id === listing.id ? { ...x, platform: v } : x,
+                                ),
+                              );
+                            }}
                           />
                         </label>
                         <label>
                           Listing ID
                           <input
                             value={listing.listingId}
-                            onChange={(e) => { const v = e.target.value; setListings((p) => p.map((x) => x.id === listing.id ? { ...x, listingId: v } : x)); }}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setListings((p) =>
+                                p.map((x) =>
+                                  x.id === listing.id ? { ...x, listingId: v } : x,
+                                ),
+                              );
+                            }}
                           />
                         </label>
                       </div>
@@ -1014,36 +1339,64 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                         URL
                         <input
                           value={listing.url}
-                          onChange={(e) => { const v = e.target.value; setListings((p) => p.map((x) => x.id === listing.id ? { ...x, url: v } : x)); }}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setListings((p) =>
+                              p.map((x) => (x.id === listing.id ? { ...x, url: v } : x)),
+                            );
+                          }}
                         />
                       </label>
-                      <div className="mGrid2">
+                      <div className={ui.mGrid2}>
                         <label>
                           Ask price (£)
                           <input
                             type="number"
                             step="0.01"
                             value={listing.askPrice}
-                            onChange={(e) => { const v = Number(e.target.value || 0); setListings((p) => p.map((x) => x.id === listing.id ? { ...x, askPrice: v } : x)); }}
+                            onChange={(e) => {
+                              const v = Number(e.target.value || 0);
+                              setListings((p) =>
+                                p.map((x) =>
+                                  x.id === listing.id ? { ...x, askPrice: v } : x,
+                                ),
+                              );
+                            }}
                           />
                         </label>
                         <label>
                           Status
                           <select
                             value={listing.status}
-                            onChange={(e) => { const v = e.target.value; setListings((p) => p.map((x) => x.id === listing.id ? { ...x, status: v } : x)); }}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setListings((p) =>
+                                p.map((x) =>
+                                  x.id === listing.id ? { ...x, status: v } : x,
+                                ),
+                              );
+                            }}
                           >
-                            {LISTING_STATUSES.map((s) => <option key={s}>{s}</option>)}
+                            {LISTING_STATUSES.map((s) => (
+                              <option key={s}>{s}</option>
+                            ))}
                           </select>
                         </label>
                       </div>
-                      <div className="mGrid2">
+                      <div className={ui.mGrid2}>
                         <label>
                           Listed at
                           <input
                             type="date"
                             value={listing.listedAt}
-                            onChange={(e) => { const v = e.target.value; setListings((p) => p.map((x) => x.id === listing.id ? { ...x, listedAt: v } : x)); }}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setListings((p) =>
+                                p.map((x) =>
+                                  x.id === listing.id ? { ...x, listedAt: v } : x,
+                                ),
+                              );
+                            }}
                           />
                         </label>
                         <label>
@@ -1051,13 +1404,20 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                           <input
                             type="date"
                             value={listing.endedAt}
-                            onChange={(e) => { const v = e.target.value; setListings((p) => p.map((x) => x.id === listing.id ? { ...x, endedAt: v } : x)); }}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setListings((p) =>
+                                p.map((x) =>
+                                  x.id === listing.id ? { ...x, endedAt: v } : x,
+                                ),
+                              );
+                            }}
                           />
                         </label>
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button
-                          className="btn primary"
+                          className={ui.buttonPrimary}
                           type="button"
                           onClick={() => updateListing(listing)}
                           disabled={isBusy}
@@ -1066,11 +1426,18 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                           {isBusy ? "Saving…" : "Save listing"}
                         </button>
                         <button
-                          className="btn"
+                          className={ui.button}
                           type="button"
                           onClick={() => deleteListing(listing.id)}
                           disabled={isBusy}
-                          style={{ height: 40, padding: "0 14px", fontSize: 13, width: "auto", minHeight: 0, color: "var(--danger)" }}
+                          style={{
+                            height: 40,
+                            padding: "0 14px",
+                            fontSize: 13,
+                            width: "auto",
+                            minHeight: 0,
+                            color: "var(--danger)",
+                          }}
                         >
                           Delete
                         </button>
@@ -1114,49 +1481,87 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                 padding: 12,
               }}
             >
-              <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: "var(--muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  marginBottom: 12,
+                }}
+              >
                 New listing
               </div>
-              <div className="mGrid1">
-                <div className="mGrid2">
+              <div className={ui.mGrid1}>
+                <div className={ui.mGrid2}>
                   <label>
                     Platform
-                    <input value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} placeholder="e.g. Vinted" />
+                    <input
+                      value={newPlatform}
+                      onChange={(e) => setNewPlatform(e.target.value)}
+                      placeholder="e.g. Vinted"
+                    />
                   </label>
                   <label>
                     Listing ID
-                    <input value={newListingId} onChange={(e) => setNewListingId(e.target.value)} />
+                    <input
+                      value={newListingId}
+                      onChange={(e) => setNewListingId(e.target.value)}
+                    />
                   </label>
                 </div>
                 <label>
                   URL
-                  <input value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://…" />
+                  <input
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="https://…"
+                  />
                 </label>
-                <div className="mGrid2">
+                <div className={ui.mGrid2}>
                   <label>
                     Ask price (£)
-                    <input type="number" step="0.01" value={newAskPrice} onChange={(e) => setNewAskPrice(e.target.value)} />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newAskPrice}
+                      onChange={(e) => setNewAskPrice(e.target.value)}
+                    />
                   </label>
                   <label>
                     Status
-                    <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
-                      {LISTING_STATUSES.map((s) => <option key={s}>{s}</option>)}
+                    <select
+                      value={newStatus}
+                      onChange={(e) => setNewStatus(e.target.value)}
+                    >
+                      {LISTING_STATUSES.map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
                     </select>
                   </label>
                 </div>
-                <div className="mGrid2">
+                <div className={ui.mGrid2}>
                   <label>
                     Listed at
-                    <input type="date" value={newListedAt} onChange={(e) => setNewListedAt(e.target.value)} />
+                    <input
+                      type="date"
+                      value={newListedAt}
+                      onChange={(e) => setNewListedAt(e.target.value)}
+                    />
                   </label>
                   <label>
                     Ended at
-                    <input type="date" value={newEndedAt} onChange={(e) => setNewEndedAt(e.target.value)} />
+                    <input
+                      type="date"
+                      value={newEndedAt}
+                      onChange={(e) => setNewEndedAt(e.target.value)}
+                    />
                   </label>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
-                    className="btn primary"
+                    className={ui.buttonPrimary}
                     type="button"
                     onClick={createListing}
                     disabled={listingBusyId === "new"}
@@ -1165,10 +1570,16 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
                     {listingBusyId === "new" ? "Adding…" : "Add listing"}
                   </button>
                   <button
-                    className="btn"
+                    className={ui.button}
                     type="button"
                     onClick={() => setShowNewListingForm(false)}
-                    style={{ height: 40, padding: "0 14px", fontSize: 13, width: "auto", minHeight: 0 }}
+                    style={{
+                      height: 40,
+                      padding: "0 14px",
+                      fontSize: 13,
+                      width: "auto",
+                      minHeight: 0,
+                    }}
                   >
                     Cancel
                   </button>
@@ -1183,16 +1594,27 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
       {item.saleId && (
         <Section title="Sale info" icon="🧾" defaultOpen>
           <div style={{ paddingTop: 12, display: "grid", gap: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
+            <div
+              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}
+            >
               {[
                 ["Sale date", item.saleDate || "—"],
-                ["Fulfillment", item.fulfillmentStatus ? item.fulfillmentStatus.replace(/_/g, " ") : "—"],
+                [
+                  "Fulfillment",
+                  item.fulfillmentStatus
+                    ? item.fulfillmentStatus.replace(/_/g, " ")
+                    : "—",
+                ],
                 ["Shipped", item.shippedAt || "—"],
                 ["Delivered", item.deliveredAt || "—"],
               ].map(([label, value]) => (
                 <div key={label}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{label}</div>
-                  <div style={{ fontWeight: 700, marginTop: 1, fontSize: 14 }}>{value}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
+                    {label}
+                  </div>
+                  <div style={{ fontWeight: 700, marginTop: 1, fontSize: 14 }}>
+                    {value}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1219,7 +1641,14 @@ export default function MobileInventoryItemEditor({ item }: { item: Item }) {
         </Section>
       )}
 
-      <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", paddingBottom: 4 }}>
+      <div
+        style={{
+          fontSize: 11,
+          color: "var(--muted)",
+          textAlign: "center",
+          paddingBottom: 4,
+        }}
+      >
         Created {item.createdAt}
       </div>
     </div>

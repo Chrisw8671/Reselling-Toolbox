@@ -1,3 +1,4 @@
+import { badgeClass, cx, ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
@@ -125,11 +126,11 @@ export default async function SaleDetailPage({ params }: Props) {
   const profit = revenue - costs;
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Sale</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
             {sale.platform} • {sale.saleDate.toLocaleDateString()} •{" "}
             {sale.orderRef ?? "—"} •{" "}
             {FULFILLMENT_LABEL[sale.fulfillmentStatus as FulfillmentStatus]}
@@ -140,7 +141,7 @@ export default async function SaleDetailPage({ params }: Props) {
         <div style={{ display: "flex", gap: 10 }}>
           <SaleArchiveButton saleId={sale.id} archived={!!sale.archivedAt} />
 
-          <Link className="btn" href="/sales">
+          <Link className={ui.button} href="/sales">
             ← Sales
           </Link>
         </div>
@@ -161,7 +162,7 @@ export default async function SaleDetailPage({ params }: Props) {
         deliveredAt={toDatetimeLocal(sale.deliveredAt)}
       />
 
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <div
           style={{
             display: "grid",
@@ -177,7 +178,7 @@ export default async function SaleDetailPage({ params }: Props) {
           </div>
           <div>
             <b>Profit:</b>{" "}
-            <span className={`badge ${profit >= 0 ? "profitPos" : "profitNeg"}`}>
+            <span className={badgeClass(profit >= 0 ? "profitPos" : "profitNeg")}>
               £{profit.toFixed(2)}
             </span>
           </div>
@@ -210,45 +211,45 @@ export default async function SaleDetailPage({ params }: Props) {
         </div>
 
         {sale.notes && (
-          <div style={{ marginTop: 12 }} className="muted">
+          <div style={{ marginTop: 12 }} className={ui.muted}>
             {sale.notes}
           </div>
         )}
       </div>
 
-      <div className="tableWrap">
-        <table className="table">
-          <thead className="thead">
+      <div className={ui.tableWrap}>
+        <table className={ui.table}>
+          <thead className={ui.thead}>
             <tr>
-              <th className="th" style={{ width: 160 }}>
+              <th className={ui.th} style={{ width: 160 }}>
                 SKU
               </th>
-              <th className="th">Title</th>
-              <th className="th" style={{ width: 110 }}>
+              <th className={ui.th}>Title</th>
+              <th className={ui.th} style={{ width: 110 }}>
                 Loc
               </th>
-              <th className="th" style={{ width: 130 }}>
+              <th className={ui.th} style={{ width: 130 }}>
                 Buy
               </th>
-              <th className="th" style={{ width: 130 }}>
+              <th className={ui.th} style={{ width: 130 }}>
                 Sell
               </th>
-              <th className="th" style={{ width: 140 }}>
+              <th className={ui.th} style={{ width: 140 }}>
                 Item Profit
               </th>
             </tr>
           </thead>
           <tbody>
             {lines.map((l) => (
-              <tr className="tr" key={l.sku}>
-                <td className="td">{l.sku}</td>
-                <td className="td titleCell">{l.title}</td>
-                <td className="td">{l.loc}</td>
-                <td className="td">£{l.buy.toFixed(2)}</td>
-                <td className="td">£{l.sell.toFixed(2)}</td>
-                <td className="td">
+              <tr className={ui.tr} key={l.sku}>
+                <td className={ui.td}>{l.sku}</td>
+                <td className={cx(ui.td, ui.titleCell)}>{l.title}</td>
+                <td className={ui.td}>{l.loc}</td>
+                <td className={ui.td}>£{l.buy.toFixed(2)}</td>
+                <td className={ui.td}>£{l.sell.toFixed(2)}</td>
+                <td className={ui.td}>
                   <span
-                    className={`badge ${l.itemProfit >= 0 ? "profitPos" : "profitNeg"}`}
+                    className={badgeClass(l.itemProfit >= 0 ? "profitPos" : "profitNeg")}
                   >
                     £{l.itemProfit.toFixed(2)}
                   </span>
@@ -259,7 +260,7 @@ export default async function SaleDetailPage({ params }: Props) {
         </table>
       </div>
 
-      <div className="muted" style={{ marginTop: 12 }}>
+      <div className={ui.muted} style={{ marginTop: 12 }}>
         Note: “Item Profit” is sell − buy. The overall profit also includes
         fees/shipping/other costs.
       </div>

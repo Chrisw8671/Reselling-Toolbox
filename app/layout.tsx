@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { ui } from "@/lib/ui";
 
 export const metadata: Metadata = {
   title: "Reselling Toolbox",
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Navbar />
-        <main className="mainContent">{children}</main>
+        <main className={ui.mainContent}>{children}</main>
       </body>
     </html>
   );

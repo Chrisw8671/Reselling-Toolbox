@@ -1,3 +1,4 @@
+import { chipClass, ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 
@@ -28,7 +29,13 @@ function fulfillmentColor(status: string) {
 }
 
 function fulfillmentLabel(status: string) {
-  return FULFILLMENT_LABELS[status] ?? status.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  return (
+    FULFILLMENT_LABELS[status] ??
+    status
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
 
 export default async function MobileSalesPage({ searchParams }: Props) {
@@ -61,21 +68,26 @@ export default async function MobileSalesPage({ searchParams }: Props) {
   ]);
 
   const countMap: Record<string, number> = {};
-  for (const c of statusCounts) countMap[c.fulfillmentStatus] = c._count.fulfillmentStatus;
+  for (const c of statusCounts)
+    countMap[c.fulfillmentStatus] = c._count.fulfillmentStatus;
   const totalCount = Object.values(countMap).reduce((s, n) => s + n, 0);
 
   return (
-    <div className="mobilePg">
+    <div className={ui.mobilePage}>
       <div style={{ paddingTop: 10, paddingBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <h1
+            style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}
+          >
             Sales
           </h1>
-          <Link
-            href="/mobile/sales/new"
-            className="btn"
-            style={{ height: 36, fontSize: 13, padding: "0 14px", width: "auto", minHeight: 0 }}
-          >
+          <Link href="/mobile/sales/new" className={ui.buttonCompact}>
             + New
           </Link>
         </div>
@@ -87,18 +99,15 @@ export default async function MobileSalesPage({ searchParams }: Props) {
 
       {/* Status filter chips */}
       {statusCounts.length > 1 && (
-        <div className="chipRow">
-          <Link
-            href="/mobile/sales"
-            className={`chip${!statusFilter ? " chipActive" : ""}`}
-          >
+        <div className={ui.chipRow}>
+          <Link href="/mobile/sales" className={chipClass(!statusFilter)}>
             All ({totalCount})
           </Link>
           {statusCounts.map((sc) => (
             <Link
               key={sc.fulfillmentStatus}
               href={`/mobile/sales?status=${sc.fulfillmentStatus}`}
-              className={`chip${statusFilter === sc.fulfillmentStatus ? " chipActive" : ""}`}
+              className={chipClass(statusFilter === sc.fulfillmentStatus)}
             >
               {fulfillmentLabel(sc.fulfillmentStatus)} ({sc._count.fulfillmentStatus})
             </Link>
@@ -114,7 +123,11 @@ export default async function MobileSalesPage({ searchParams }: Props) {
           const label = fulfillmentLabel(sale.fulfillmentStatus);
 
           return (
-            <Link key={sale.id} href={`/mobile/sales/${sale.id}`} className="mobileSaleCard">
+            <Link
+              key={sale.id}
+              href={`/mobile/sales/${sale.id}`}
+              className={ui.mobileSaleCard}
+            >
               {/* Platform + status pill */}
               <div
                 style={{
@@ -128,7 +141,7 @@ export default async function MobileSalesPage({ searchParams }: Props) {
                   {sale.platform || "Unknown"}
                 </div>
                 <span
-                  className="statusPill"
+                  className={ui.statusPill}
                   style={{
                     background: `color-mix(in srgb, ${color} 14%, var(--panel-2))`,
                     color,
@@ -176,7 +189,9 @@ export default async function MobileSalesPage({ searchParams }: Props) {
         })}
 
         {sales.length === 0 && (
-          <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--muted)" }}>
+          <div
+            style={{ textAlign: "center", padding: "40px 16px", color: "var(--muted)" }}
+          >
             <div style={{ fontSize: 36, marginBottom: 10 }}>🧾</div>
             <div style={{ fontWeight: 700, fontSize: 15 }}>No sales found</div>
             <div style={{ marginTop: 6, fontSize: 13 }}>

@@ -1,5 +1,6 @@
 "use client";
 
+import { badgeClass, ui } from "@/lib/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatStatus } from "@/lib/status";
@@ -65,28 +66,32 @@ export default function StockUnitEditor({ item }: { item: Item }) {
   }
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{item.sku}</h1>
-          <div className="muted" style={{ marginTop: 6 }}>
-            <span className={`badge ${status}`}>{formatStatus(status)}</span>
-            {archived && <span className="muted"> • Archived</span>}
+          <div className={ui.muted} style={{ marginTop: 6 }}>
+            <span className={badgeClass(status)}>{formatStatus(status)}</span>
+            {archived && <span className={ui.muted}> • Archived</span>}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn" type="button" onClick={() => router.push("/inventory")}>
+          <button
+            className={ui.button}
+            type="button"
+            onClick={() => router.push("/inventory")}
+          >
             ← Inventory
           </button>
-          <button className="btn" type="button" onClick={save}>
+          <button className={ui.button} type="button" onClick={save}>
             Save
           </button>
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16 }}>
-        <div className="formGrid">
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
+        <div className={ui.formGrid}>
           <label>
             Title
             <input
@@ -186,7 +191,7 @@ export default function StockUnitEditor({ item }: { item: Item }) {
         <div
           style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}
         >
-          <button className="btn" type="button" onClick={save}>
+          <button className={ui.button} type="button" onClick={save}>
             Save
           </button>
         </div>

@@ -1,3 +1,4 @@
+import { cx, ui } from "@/lib/ui";
 import { prisma } from "@/lib/prisma";
 
 export default async function MobileReportPage() {
@@ -20,7 +21,11 @@ export default async function MobileReportPage() {
   ]);
 
   const totalRevenue = sales.reduce((sum, s) => {
-    return sum + s.lines.reduce((r, l) => r + Number(l.salePrice), 0) + Number(s.shippingCharged);
+    return (
+      sum +
+      s.lines.reduce((r, l) => r + Number(l.salePrice), 0) +
+      Number(s.shippingCharged)
+    );
   }, 0);
 
   const totalCosts = sales.reduce((sum, s) => {
@@ -36,20 +41,16 @@ export default async function MobileReportPage() {
   const totalProfit = totalRevenue - totalCosts;
 
   return (
-    <div className="mobilePg">
-      <div style={{ paddingTop: 10, paddingBottom: 16 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 900, margin: 0, letterSpacing: "-0.5px" }}>
-          Report
-        </h1>
-        <div style={{ marginTop: 4, fontSize: 13, color: "var(--muted)" }}>
-          Lifetime metrics across all sales
-        </div>
+    <div className={ui.mobilePage}>
+      <div className="pt-2.5 pb-4">
+        <h1 className={ui.mobilePageTitle}>Report</h1>
+        <div className={ui.mobilePageSubtitle}>Lifetime metrics across all sales</div>
       </div>
 
-      <div className="statGrid">
+      <div className={ui.statGrid}>
         {/* Profit — full width, prominent */}
-        <div className="statTile wide">
-          <div className="statLabel">Lifetime profit</div>
+        <div className={cx(ui.statTile, ui.statTileWide)}>
+          <div className={ui.statLabel}>Lifetime profit</div>
           <div
             style={{
               fontSize: 38,
@@ -63,9 +64,16 @@ export default async function MobileReportPage() {
           </div>
         </div>
 
-        <div className="statTile wide">
-          <div className="statLabel">Revenue</div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={cx(ui.statTile, ui.statTileWide)}>
+          <div className={ui.statLabel}>Revenue</div>
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: 900,
+              letterSpacing: "-0.5px",
+              marginTop: 2,
+            }}
+          >
             £{totalRevenue.toFixed(2)}
           </div>
           <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>
@@ -73,36 +81,36 @@ export default async function MobileReportPage() {
           </div>
         </div>
 
-        <div className="statTile">
-          <div className="statLabel">Total inventory</div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Total inventory</div>
+          <div className="mt-0.5 text-[28px] font-black tracking-[-0.5px]">
             {stockCount}
           </div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>units</div>
+          <div className="text-app-muted mt-[3px] text-xs">units</div>
         </div>
 
-        <div className="statTile">
-          <div className="statLabel">Currently listed</div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Currently listed</div>
+          <div className="mt-0.5 text-[28px] font-black tracking-[-0.5px]">
             {listedCount}
           </div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>active</div>
+          <div className="text-app-muted mt-[3px] text-xs">active</div>
         </div>
 
-        <div className="statTile">
-          <div className="statLabel">Total sales</div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Total sales</div>
+          <div className="mt-0.5 text-[28px] font-black tracking-[-0.5px]">
             {sales.length}
           </div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>orders</div>
+          <div className="text-app-muted mt-[3px] text-xs">orders</div>
         </div>
 
-        <div className="statTile">
-          <div className="statLabel">Units sold</div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2 }}>
+        <div className={ui.statTile}>
+          <div className={ui.statLabel}>Units sold</div>
+          <div className="mt-0.5 text-[28px] font-black tracking-[-0.5px]">
             {soldCount}
           </div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>items</div>
+          <div className="text-app-muted mt-[3px] text-xs">items</div>
         </div>
       </div>
     </div>

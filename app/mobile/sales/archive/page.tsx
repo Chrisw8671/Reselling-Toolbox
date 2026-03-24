@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ArchivedSalesTable from "@/components/ArchivedSalesTable";
@@ -90,11 +91,11 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
   const totalProfit = rows.reduce((sum, r) => sum + r.profit, 0);
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Archived Sales</h1>
-          <div className="muted" style={{ marginTop: 4 }}>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
             {rows.length} sale(s) • Profit shown: £{totalProfit.toFixed(2)}
             {q ? ` • Filtered by “${q}”` : ""}
             {platform ? ` • Platform: ${platform}` : ""}
@@ -102,14 +103,14 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Link className="btn" href="/sales">
+          <Link className={ui.button} href="/sales">
             ← Sales
           </Link>
         </div>
       </div>
 
       {/* Filters card */}
-      <div className="tableWrap" style={{ padding: 16, marginBottom: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16, marginBottom: 16 }}>
         <form
           action="/sales/archive"
           method="get"
@@ -142,12 +143,12 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
             </select>
           </label>
 
-          <button className="btn" type="submit">
+          <button className={ui.button} type="submit">
             Apply
           </button>
 
           {(q || platform) && (
-            <Link className="btn" href="/sales/archive">
+            <Link className={ui.button} href="/sales/archive">
               Clear
             </Link>
           )}
@@ -156,7 +157,7 @@ export default async function ArchivedSalesPage({ searchParams }: Props) {
 
       <ArchivedSalesTable rows={rows} />
 
-      <div className="muted" style={{ marginTop: 12 }}>
+      <div className={ui.muted} style={{ marginTop: 12 }}>
         Profit: (item prices + shipping charged) − (purchase costs + fees + shipping cost
         + other costs).
       </div>

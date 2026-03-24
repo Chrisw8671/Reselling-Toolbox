@@ -112,7 +112,8 @@ export async function POST(req: Request) {
 
       locationId,
 
-      archived: archived === undefined || archived === null ? undefined : Boolean(archived),
+      archived:
+        archived === undefined || archived === null ? undefined : Boolean(archived),
       archivedAt:
         archived === undefined || archived === null
           ? undefined

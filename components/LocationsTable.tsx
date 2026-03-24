@@ -1,5 +1,6 @@
 "use client";
 
+import { cx, ui } from "@/lib/ui";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -133,12 +134,12 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
   }
 
   return (
-    <div className="tableWrap">
+    <div className={ui.tableWrap}>
       {/* Create row */}
       <div style={{ padding: 12, borderBottom: "1px solid var(--border)" }}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Add location</div>
 
-        <div className="formGrid">
+        <div className={ui.formGrid}>
           <label>
             Code (Bay/Box)
             <input
@@ -171,30 +172,35 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
         </div>
 
         <div style={{ marginTop: 10 }}>
-          <button className="btn" type="button" disabled={busy} onClick={createLocation}>
+          <button
+            className={ui.button}
+            type="button"
+            disabled={busy}
+            onClick={createLocation}
+          >
             {busy ? "Saving..." : "Add location"}
           </button>
         </div>
       </div>
 
-      <div className="tableScroll">
-        <table className="table">
-          <thead className="thead">
+      <div className={ui.tableScroll}>
+        <table className={ui.table}>
+          <thead className={ui.thead}>
             <tr>
-              <th className="th" style={{ width: 170 }}>
+              <th className={ui.th} style={{ width: 170 }}>
                 Code
               </th>
-              <th className="th" style={{ width: 140 }}>
+              <th className={ui.th} style={{ width: 140 }}>
                 Type
               </th>
-              <th className="th">Description</th>
-              <th className="th" style={{ width: 90 }}>
+              <th className={ui.th}>Description</th>
+              <th className={ui.th} style={{ width: 90 }}>
                 In use
               </th>
-              <th className="th" style={{ width: 170 }}>
+              <th className={ui.th} style={{ width: 170 }}>
                 Created
               </th>
-              <th className="th" style={{ width: 170, textAlign: "right" }}>
+              <th className={ui.th} style={{ width: 170, textAlign: "right" }}>
                 Actions
               </th>
             </tr>
@@ -205,8 +211,8 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
               const isEdit = editId === r.id;
 
               return (
-                <tr key={r.id} className="tr">
-                  <td className="td">
+                <tr key={r.id} className={ui.tr}>
+                  <td className={ui.td}>
                     {isEdit ? (
                       <input
                         value={editCode}
@@ -218,7 +224,7 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                     )}
                   </td>
 
-                  <td className="td">
+                  <td className={ui.td}>
                     {isEdit ? (
                       <input
                         value={editType}
@@ -230,7 +236,7 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                     )}
                   </td>
 
-                  <td className="td">
+                  <td className={ui.td}>
                     {isEdit ? (
                       <input
                         value={editNotes}
@@ -238,18 +244,18 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                         disabled={busy}
                       />
                     ) : (
-                      r.notes || <span className="muted">—</span>
+                      r.notes || <span className={ui.muted}>—</span>
                     )}
                   </td>
 
-                  <td className="td">{r.inUse}</td>
-                  <td className="td">{fmt(r.createdAt)}</td>
+                  <td className={ui.td}>{r.inUse}</td>
+                  <td className={ui.td}>{fmt(r.createdAt)}</td>
 
-                  <td className="td" style={{ textAlign: "right" }}>
+                  <td className={ui.td} style={{ textAlign: "right" }}>
                     {!isEdit ? (
-                      <div className="actions">
+                      <div className={ui.actions}>
                         <button
-                          className="iconBtn"
+                          className={ui.iconButton}
                           type="button"
                           disabled={busy}
                           onClick={() => startEdit(r)}
@@ -257,7 +263,7 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                           ✎
                         </button>
                         <button
-                          className="iconBtn"
+                          className={ui.iconButton}
                           type="button"
                           disabled={busy}
                           onClick={() => deleteLocation(r.id, r.code, r.inUse)}
@@ -267,9 +273,9 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                         </button>
                       </div>
                     ) : (
-                      <div className="actions">
+                      <div className={ui.actions}>
                         <button
-                          className="btn"
+                          className={ui.button}
                           type="button"
                           disabled={busy}
                           onClick={cancelEdit}
@@ -277,7 +283,7 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
                           Cancel
                         </button>
                         <button
-                          className="btn primary"
+                          className={ui.buttonPrimary}
                           type="button"
                           disabled={busy}
                           onClick={() => saveEdit(r.id)}
@@ -292,8 +298,8 @@ export default function LocationsTable({ rows }: { rows: Row[] }) {
             })}
 
             {sorted.length === 0 && (
-              <tr className="tr">
-                <td className="td muted" colSpan={6}>
+              <tr className={ui.tr}>
+                <td className={cx(ui.td, ui.muted)} colSpan={6}>
                   No locations yet.
                 </td>
               </tr>

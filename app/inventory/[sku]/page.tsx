@@ -1,3 +1,4 @@
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -115,15 +116,17 @@ export default async function InventoryDetailPage({ params }: Props) {
   };
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Inventory Item</h1>
-          <div className="muted" style={{ marginTop: 4 }}>SKU: {itemPlain.sku}</div>
+          <div className={ui.muted} style={{ marginTop: 4 }}>
+            SKU: {itemPlain.sku}
+          </div>
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Link className="btn" href="/inventory">
+          <Link className={ui.button} href="/inventory">
             ← Inventory
           </Link>
         </div>

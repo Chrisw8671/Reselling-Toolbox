@@ -29,8 +29,7 @@ function parseMetaTags(html: string) {
 
   for (const tag of html.match(META_TAG_REGEX) ?? []) {
     const keyMatch =
-      tag.match(/\sproperty=["']([^"']+)["']/i) ??
-      tag.match(/\sname=["']([^"']+)["']/i);
+      tag.match(/\sproperty=["']([^"']+)["']/i) ?? tag.match(/\sname=["']([^"']+)["']/i);
     const contentMatch = tag.match(/\scontent=["']([\s\S]*?)["']/i);
 
     if (!keyMatch || !contentMatch) continue;
@@ -130,7 +129,10 @@ export async function POST(req: Request) {
   }
 
   if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-    return NextResponse.json({ error: "Only HTTP(S) URLs are supported" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Only HTTP(S) URLs are supported" },
+      { status: 400 },
+    );
   }
 
   const res = await fetch(parsedUrl, {
@@ -145,7 +147,8 @@ export async function POST(req: Request) {
   if (!res || !res.ok) {
     return NextResponse.json(
       {
-        error: "Could not fetch listing page. Try opening the link in your browser first.",
+        error:
+          "Could not fetch listing page. Try opening the link in your browser first.",
       },
       { status: 400 },
     );
@@ -188,9 +191,11 @@ export async function POST(req: Request) {
 
   const size =
     toStringValue(productNode?.size) ||
-    toStringValue(productNode?.additionalProperty?.find?.((x: any) =>
-      toStringValue(x?.name).toLowerCase().includes("size"),
-    )?.value) ||
+    toStringValue(
+      productNode?.additionalProperty?.find?.((x: any) =>
+        toStringValue(x?.name).toLowerCase().includes("size"),
+      )?.value,
+    ) ||
     "";
 
   const description =

@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/lib/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { formatStatus } from "@/lib/status";
@@ -315,7 +316,9 @@ export default function NewInventoryPage() {
 
     if (!purchasedFromChoice && imported.purchasedFrom) {
       const source = String(imported.purchasedFrom);
-      if (PURCHASED_FROM_OPTIONS.includes(source as (typeof PURCHASED_FROM_OPTIONS)[number])) {
+      if (
+        PURCHASED_FROM_OPTIONS.includes(source as (typeof PURCHASED_FROM_OPTIONS)[number])
+      ) {
         setPurchasedFromChoice(source as (typeof PURCHASED_FROM_OPTIONS)[number]);
       }
     }
@@ -329,37 +332,41 @@ export default function NewInventoryPage() {
   }
 
   return (
-    <div className="container">
-      <div className="toolbar">
+    <div className={ui.page}>
+      <div className={ui.toolbar}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>New Inventory Item</h1>
-          <div className="muted" style={{ marginTop: 6 }}>
+          <div className={ui.muted} style={{ marginTop: 6 }}>
             SKU: {sku || "Generating..."}
           </div>
 
           {msg && (
-            <div className="muted" style={{ marginTop: 8 }}>
+            <div className={ui.muted} style={{ marginTop: 8 }}>
               {msg}
             </div>
           )}
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn" type="button" onClick={() => router.push("/inventory")}>
+          <button
+            className={ui.button}
+            type="button"
+            onClick={() => router.push("/inventory")}
+          >
             ← Inventory
           </button>
-          <button className="btn primary" type="button" onClick={save}>
+          <button className={ui.buttonPrimary} type="button" onClick={save}>
             Create
           </button>
         </div>
       </div>
 
-      <div className="tableWrap" style={{ padding: 16 }}>
+      <div className={ui.tableWrap} style={{ padding: 16 }}>
         {/* Item details */}
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Item details</div>
 
-          <div className="formGrid">
+          <div className={ui.formGrid}>
             <label>
               Title{requiredStar("title")}
               <input
@@ -450,7 +457,7 @@ export default function NewInventoryPage() {
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 800, marginBottom: 10 }}>Purchase details</div>
 
-          <div className="formGrid">
+          <div className={ui.formGrid}>
             <label>
               Purchased date
               <input
@@ -530,7 +537,7 @@ export default function NewInventoryPage() {
                   placeholder="https://..."
                 />
                 <button
-                  className="btn"
+                  className={ui.button}
                   type="button"
                   onClick={importFromPurchaseUrl}
                   disabled={importingFromUrl}

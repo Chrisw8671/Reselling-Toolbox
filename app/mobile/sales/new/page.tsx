@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/lib/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,7 +14,14 @@ type SaleItem = {
   salePrice: string;
 };
 
-const PLATFORMS = ["Vinted", "eBay", "Depop", "Facebook Marketplace", "In Person", "Other"];
+const PLATFORMS = [
+  "Vinted",
+  "eBay",
+  "Depop",
+  "Facebook Marketplace",
+  "In Person",
+  "Other",
+];
 
 export default function MobileCreateSalePage() {
   const router = useRouter();
@@ -118,12 +126,26 @@ export default function MobileCreateSalePage() {
   const totalSale = items.reduce((s, it) => s + (Number(it.salePrice) || 0), 0);
 
   return (
-    <div className="mobilePg">
+    <div className={ui.mobilePage}>
       {/* Header */}
-      <div style={{ paddingTop: 10, paddingBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+      <div
+        style={{
+          paddingTop: 10,
+          paddingBottom: 14,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
         <Link
           href="/mobile/sales"
-          style={{ fontSize: 26, textDecoration: "none", color: "var(--text)", lineHeight: 1, flexShrink: 0 }}
+          style={{
+            fontSize: 26,
+            textDecoration: "none",
+            color: "var(--text)",
+            lineHeight: 1,
+            flexShrink: 0,
+          }}
         >
           ‹
         </Link>
@@ -133,9 +155,9 @@ export default function MobileCreateSalePage() {
       </div>
 
       {/* Sale details */}
-      <div className="mobileCard">
-        <div className="mobileCardTitle">Sale details</div>
-        <div className="mGrid1">
+      <div className={ui.mobileCard}>
+        <div className={ui.mobileCardTitle}>Sale details</div>
+        <div className={ui.mGrid1}>
           <label>
             Platform
             <select value={platform} onChange={(e) => setPlatform(e.target.value)}>
@@ -146,10 +168,15 @@ export default function MobileCreateSalePage() {
           </label>
           <label>
             Sale date
-            <input type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
+            <input
+              type="date"
+              value={saleDate}
+              onChange={(e) => setSaleDate(e.target.value)}
+            />
           </label>
           <label>
-            Order reference <span style={{ fontWeight: 400, color: "var(--muted)" }}>(optional)</span>
+            Order reference{" "}
+            <span style={{ fontWeight: 400, color: "var(--muted)" }}>(optional)</span>
             <input
               value={orderRef}
               onChange={(e) => setOrderRef(e.target.value)}
@@ -160,9 +187,9 @@ export default function MobileCreateSalePage() {
       </div>
 
       {/* Costs & fees */}
-      <div className="mobileCard">
-        <div className="mobileCardTitle">Costs & fees</div>
-        <div className="mGrid2">
+      <div className={ui.mobileCard}>
+        <div className={ui.mobileCardTitle}>Costs & fees</div>
+        <div className={ui.mGrid2}>
           <label>
             Shipping charged
             <input
@@ -203,7 +230,7 @@ export default function MobileCreateSalePage() {
       </div>
 
       {/* Items */}
-      <div className="mobileCard">
+      <div className={ui.mobileCard}>
         <div
           style={{
             display: "flex",
@@ -212,7 +239,7 @@ export default function MobileCreateSalePage() {
             marginBottom: 14,
           }}
         >
-          <div className="mobileCardTitle" style={{ margin: 0 }}>
+          <div className={ui.mobileCardTitle} style={{ margin: 0 }}>
             Items
           </div>
           {items.length > 0 && (
@@ -237,10 +264,16 @@ export default function MobileCreateSalePage() {
             autoCapitalize="characters"
           />
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             onClick={addSku}
-            style={{ flexShrink: 0, height: 40, padding: "0 16px", width: "auto", minHeight: 0 }}
+            style={{
+              flexShrink: 0,
+              height: 40,
+              padding: "0 16px",
+              width: "auto",
+              minHeight: 0,
+            }}
           >
             Add
           </button>
@@ -263,8 +296,15 @@ export default function MobileCreateSalePage() {
             </div>
           )}
           {items.map((it) => (
-            <div key={it.stockUnitId} className="saleItemCard">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+            <div key={it.stockUnitId} className={ui.saleItemCard}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 8,
+                }}
+              >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
@@ -285,7 +325,9 @@ export default function MobileCreateSalePage() {
                 <button
                   type="button"
                   onClick={() =>
-                    setItems((prev) => prev.filter((x) => x.stockUnitId !== it.stockUnitId))
+                    setItems((prev) =>
+                      prev.filter((x) => x.stockUnitId !== it.stockUnitId),
+                    )
                   }
                   style={{
                     background: "none",
@@ -343,13 +385,21 @@ export default function MobileCreateSalePage() {
         )}
 
         <button
-          className="btn primary"
+          className={ui.buttonPrimary}
           type="button"
           onClick={saveSale}
           disabled={saving}
-          style={{ width: "100%", marginTop: 16, minHeight: 50, fontSize: 15, fontWeight: 800 }}
+          style={{
+            width: "100%",
+            marginTop: 16,
+            minHeight: 50,
+            fontSize: 15,
+            fontWeight: 800,
+          }}
         >
-          {saving ? "Saving…" : `Save Sale${items.length > 0 ? ` · £${totalSale.toFixed(2)}` : ""}`}
+          {saving
+            ? "Saving…"
+            : `Save Sale${items.length > 0 ? ` · £${totalSale.toFixed(2)}` : ""}`}
         </button>
       </div>
     </div>

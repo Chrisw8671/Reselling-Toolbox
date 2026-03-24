@@ -1,5 +1,6 @@
 "use client";
 
+import { badgeClass, cx, ui } from "@/lib/ui";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -120,12 +121,12 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
   }
 
   return (
-    <div className="tableWrap">
+    <div className={ui.tableWrap}>
       {/* Bulk actions row */}
       <div
         style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12 }}
       >
-        <div className="muted" style={{ fontSize: 13 }}>
+        <div className={ui.muted} style={{ fontSize: 13 }}>
           {rows.length} archived sale(s) • Selected: {selectedIds.length}
         </div>
 
@@ -138,7 +139,7 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
           }}
         >
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || selectedIds.length === 0}
             onClick={() => restoreMany(selectedIds)}
@@ -148,7 +149,7 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
           </button>
 
           <button
-            className="btn"
+            className={ui.button}
             type="button"
             disabled={busy || selectedIds.length === 0}
             onClick={() => setConfirmOpen(true)}
@@ -159,39 +160,39 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
         </div>
       </div>
 
-      <div className="tableScroll">
-        <table className="table">
-          <thead className="thead">
+      <div className={ui.tableScroll}>
+        <table className={ui.table}>
+          <thead className={ui.thead}>
             <tr>
-              <th className="th" style={{ width: 44 }}>
+              <th className={ui.th} style={{ width: 44 }}>
                 <input type="checkbox" checked={allChecked} onChange={toggleAll} />
               </th>
 
-              <th className="th" style={{ width: 150 }}>
+              <th className={ui.th} style={{ width: 150 }}>
                 Platform
               </th>
-              <th className="th" style={{ width: 180 }}>
+              <th className={ui.th} style={{ width: 180 }}>
                 Sale date
               </th>
-              <th className="th" style={{ width: 220 }}>
+              <th className={ui.th} style={{ width: 220 }}>
                 Order ref
               </th>
-              <th className="th" style={{ width: 90 }}>
+              <th className={ui.th} style={{ width: 90 }}>
                 Items
               </th>
-              <th className="th" style={{ width: 120 }}>
+              <th className={ui.th} style={{ width: 120 }}>
                 Revenue
               </th>
-              <th className="th" style={{ width: 120 }}>
+              <th className={ui.th} style={{ width: 120 }}>
                 Costs
               </th>
-              <th className="th" style={{ width: 120 }}>
+              <th className={ui.th} style={{ width: 120 }}>
                 Profit
               </th>
-              <th className="th" style={{ width: 180 }}>
+              <th className={ui.th} style={{ width: 180 }}>
                 Archived
               </th>
-              <th className="th" style={{ width: 160, textAlign: "right" }}>
+              <th className={ui.th} style={{ width: 160, textAlign: "right" }}>
                 Actions
               </th>
             </tr>
@@ -201,10 +202,10 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
             {rows.map((r) => (
               <tr
                 key={r.id}
-                className="tr rowClick"
+                className={cx(ui.tr, ui.rowClick)}
                 onClick={() => router.push(`/sales/${r.id}`)}
               >
-                <td className="td" onClick={(e) => e.stopPropagation()}>
+                <td className={ui.td} onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     checked={!!selected[r.id]}
@@ -212,28 +213,30 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
                   />
                 </td>
 
-                <td className="td">{r.platform}</td>
-                <td className="td">{formatDate(r.saleDate)}</td>
-                <td className="td">{r.orderRef || <span className="muted">—</span>}</td>
-                <td className="td">{r.itemCount}</td>
-                <td className="td">£{r.revenue.toFixed(2)}</td>
-                <td className="td">£{r.costs.toFixed(2)}</td>
-                <td className="td">
-                  <span className={`badge ${r.profit >= 0 ? "profitPos" : "profitNeg"}`}>
+                <td className={ui.td}>{r.platform}</td>
+                <td className={ui.td}>{formatDate(r.saleDate)}</td>
+                <td className={ui.td}>
+                  {r.orderRef || <span className={ui.muted}>—</span>}
+                </td>
+                <td className={ui.td}>{r.itemCount}</td>
+                <td className={ui.td}>£{r.revenue.toFixed(2)}</td>
+                <td className={ui.td}>£{r.costs.toFixed(2)}</td>
+                <td className={ui.td}>
+                  <span className={badgeClass(r.profit >= 0 ? "profitPos" : "profitNeg")}>
                     £{r.profit.toFixed(2)}
                   </span>
                 </td>
 
-                <td className="td">{formatDate(r.archivedAt ?? r.saleDate)}</td>
+                <td className={ui.td}>{formatDate(r.archivedAt ?? r.saleDate)}</td>
 
                 <td
-                  className="td"
+                  className={ui.td}
                   style={{ textAlign: "right" }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="actions">
+                  <div className={ui.actions}>
                     <button
-                      className="iconBtn"
+                      className={ui.iconButton}
                       type="button"
                       title="Restore"
                       disabled={busy}
@@ -244,7 +247,7 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
                     </button>
 
                     <button
-                      className="iconBtn"
+                      className={ui.iconButton}
                       type="button"
                       title="Permanently delete"
                       disabled={busy}
@@ -262,8 +265,8 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
             ))}
 
             {rows.length === 0 && (
-              <tr className="tr">
-                <td className="td muted" colSpan={10}>
+              <tr className={ui.tr}>
+                <td className={cx(ui.td, ui.muted)} colSpan={10}>
                   No archived sales.
                 </td>
               </tr>
@@ -274,12 +277,12 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
 
       {/* Confirm delete modal */}
       {confirmOpen && (
-        <div className="modalOverlay">
-          <div className="modalCard">
+        <div className={ui.modalOverlay}>
+          <div className={ui.modalCard}>
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
               Permanently delete?
             </h2>
-            <p className="muted" style={{ marginTop: 8 }}>
+            <p className={ui.muted} style={{ marginTop: 8 }}>
               You are about to permanently delete <b>{selectedIds.length}</b> sale(s).
               This cannot be undone.
             </p>
@@ -292,7 +295,7 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
               }}
             >
               <button
-                className="btn"
+                className={ui.button}
                 type="button"
                 disabled={busy}
                 onClick={() => setConfirmOpen(false)}
@@ -300,7 +303,7 @@ export default function ArchivedSalesTable({ rows }: { rows: Row[] }) {
                 Cancel
               </button>
               <button
-                className="btn"
+                className={ui.button}
                 type="button"
                 disabled={busy || selectedIds.length === 0}
                 onClick={() => permanentDelete(selectedIds)}
