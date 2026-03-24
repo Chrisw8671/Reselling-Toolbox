@@ -205,3 +205,43 @@ model ReturnCase {
   @@index([saleId])
   @@index([stockUnitId])
 }
+
+model EbaySearch {
+  id              String             @id @default(uuid())
+  name            String
+  keywords        String
+  category        String?
+  condition       String?
+  maxBuyPrice     Decimal?
+  minProfitMargin Decimal            @default(20)
+  active          Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  lastRunAt       DateTime?
+
+  results EbaySearchResult[]
+}
+
+model EbaySearchResult {
+  id               String      @id @default(uuid())
+  searchId         String
+  search           EbaySearch  @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  ebayItemId       String
+  title            String
+  currentPrice     Decimal
+  imageUrl         String?
+  itemUrl          String
+  condition        String?
+  avgSoldPrice     Decimal?
+  soldSampleSize   Int?
+  estimatedMargin  Decimal?
+  aiAnalysis       String?
+  aiConfidence     Int?
+  aiRecommendation String?
+  status           String      @default("pending")
+  scannedAt        DateTime    @default(now())
+  createdAt        DateTime    @default(now())
+
+  @@index([searchId])
+  @@index([status])
+}

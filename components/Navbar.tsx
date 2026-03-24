@@ -9,6 +9,7 @@ const links = [
   { href: "/inventory", label: "Inventory"},
   { href: "/sales", label: "Sales"},
   { href: "/reports", label: "Reports"},
+  { href: "/ebay-finder", label: "eBay Finder"},
 ];
 const mobilelinks = [
   { href: "/mobile", label: "Home", icon: "⌂", exact: true },
