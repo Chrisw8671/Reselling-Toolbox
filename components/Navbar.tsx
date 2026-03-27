@@ -86,60 +86,64 @@ export default function Navbar() {
       : pathname === href || pathname.startsWith(href + "/");
   }
 
+  const isMobilePath = pathname.startsWith('/mobile');
+
   return (
     <>
-      <header className={ui.navHeader}>
-        <div className={ui.navDesktopGroup}>
-          <Link href="/" className={ui.logoLink} aria-label="Go to dashboard">
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={40}
-              height={40}
-              className={ui.logo}
-              priority
-            />
-          </Link>
-        </div>
-        <div className={ui.navMobileGroup}>
-          <Link href="/mobile/" className={ui.logoLink} aria-label="Go to dashboard">
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={40}
-              height={40}
-              className={ui.logo}
-              priority
-            />
-          </Link>
-        </div>
-
-        <nav className={ui.navDesktopLinks}>
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} className={navLinkClass(isActive(l.href))}>
-              {l.label}
+      {!isMobilePath && (
+        <header className={ui.navHeader}>
+          <div className={ui.navDesktopGroup}>
+            <Link href="/" className={ui.logoLink} aria-label="Go to dashboard">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                className={ui.logo}
+                priority
+              />
             </Link>
-          ))}
-        </nav>
+          </div>
+          <div className={ui.navMobileGroup}>
+            <Link href="/mobile/" className={ui.logoLink} aria-label="Go to dashboard">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                className={ui.logo}
+                priority
+              />
+            </Link>
+          </div>
 
-        <div className={ui.navRight}>
-          <Link
-            href="/account"
-            className={navIconClass(pathname.startsWith("/account"))}
-            aria-label="Account"
-          >
-            <AccountIcon />
-          </Link>
+          <nav className={ui.navDesktopLinks}>
+            {links.map((l) => (
+              <Link key={l.href} href={l.href} className={navLinkClass(isActive(l.href))}>
+                {l.label}
+              </Link>
+            ))}
+          </nav>
 
-          <Link
-            href="/settings"
-            className={navIconClass(pathname.startsWith("/settings"))}
-            aria-label="Settings"
-          >
-            <SettingsCogIcon />
-          </Link>
-        </div>
-      </header>
+          <div className={ui.navRight}>
+            <Link
+              href="/account"
+              className={navIconClass(pathname.startsWith("/account"))}
+              aria-label="Account"
+            >
+              <AccountIcon />
+            </Link>
+
+            <Link
+              href="/settings"
+              className={navIconClass(pathname.startsWith("/settings"))}
+              aria-label="Settings"
+            >
+              <SettingsCogIcon />
+            </Link>
+          </div>
+        </header>
+      )}
 
       <nav className={ui.mobileBottomNav} aria-label="Primary">
         {mobilelinks.map((l) => {

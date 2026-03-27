@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface SearchResult {
   id: string;
@@ -110,24 +110,36 @@ export default function EbayFinderResults({ searches, initialSearchId }: Props) 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchList, setSearchList] = useState<EbaySearch[]>(searches);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
 
-  const loadResults = useCallback(async (id: string, rec: string) => {
+  const loadResults = useCallback(async (id: string, rec: string, pg = 1) => {
     setLoading(true);
-    const res = await fetch(`/api/ebay-finder/results?searchId=${id}&recommendation=${rec}`);
+    const res = await fetch(`/api/ebay-finder/results?searchId=${id}&recommendation=${rec}&page=${pg}`);
     const data = await res.json();
     setResults(data.results ?? []);
+    setPage(data.page ?? 1);
+    setPageCount(data.pageCount ?? 1);
     setLoading(false);
+  }, []);
+
+  // Auto-load results if a search is pre-selected (e.g. after creating a new search)
+  useEffect(() => {
+    if (initialSearchId) loadResults(initialSearchId, "buy");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function selectSearch(id: string) {
     setSelectedId(id);
     setRunMsg(null);
-    await loadResults(id, filter);
+    setPage(1);
+    await loadResults(id, filter, 1);
   }
 
   async function handleFilterChange(rec: "all" | "buy" | "maybe" | "skip") {
     setFilter(rec);
-    if (selectedId) await loadResults(selectedId, rec);
+    setPage(1);
+    if (selectedId) await loadResults(selectedId, rec, 1);
   }
 
   async function runSearch() {
@@ -148,7 +160,8 @@ export default function EbayFinderResults({ searches, initialSearchId }: Props) 
           `Done — scanned ${data.total} listings, ${data.profitable} met your margin threshold, ${data.analysed} analysed by AI.`,
         );
         // Refresh results and search list
-        await loadResults(selectedId, filter);
+        setPage(1);
+        await loadResults(selectedId, filter, 1);
         const listRes = await fetch("/api/ebay-finder/searches");
         setSearchList(await listRes.json());
       }
@@ -356,6 +369,44 @@ export default function EbayFinderResults({ searches, initialSearchId }: Props) 
               </div>
             )}
 
+            {!loading && pageCount > 1 && (
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}>
+                <button
+                  disabled={page <= 1}
+                  onClick={() => { const p = page - 1; setPage(p); loadResults(selectedId!, filter, p); }}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 6,
+                    border: "1px solid var(--border, #e5e7eb)",
+                    background: "transparent",
+                    cursor: page <= 1 ? "default" : "pointer",
+                    opacity: page <= 1 ? 0.4 : 1,
+                    fontSize: 13,
+                  }}
+                >
+                  ← Prev
+                </button>
+                <span style={{ fontSize: 13, color: "var(--muted, #6b7280)" }}>
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  disabled={page >= pageCount}
+                  onClick={() => { const p = page + 1; setPage(p); loadResults(selectedId!, filter, p); }}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: 6,
+                    border: "1px solid var(--border, #e5e7eb)",
+                    background: "transparent",
+                    cursor: page >= pageCount ? "default" : "pointer",
+                    opacity: page >= pageCount ? 0.4 : 1,
+                    fontSize: 13,
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+
             {!loading &&
               results.map((r) => (
                 <div
@@ -421,21 +472,42 @@ export default function EbayFinderResults({ searches, initialSearchId }: Props) 
                             </div>
                           </div>
                         )}
-                        {r.estimatedMargin != null && (
-                          <div>
-                            <span className="muted" style={{ fontSize: 12 }}>
-                              Est. margin
-                            </span>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                fontSize: 16,
-                                color: r.estimatedMargin >= 30 ? "#16a34a" : r.estimatedMargin >= 15 ? "#d97706" : "#dc2626",
-                              }}
-                            >
-                              {r.estimatedMargin.toFixed(1)}%
+                        {r.estimatedMargin != null && r.avgSoldPrice != null && (
+                          <>
+                            <div>
+                              <span className="muted" style={{ fontSize: 12 }}>
+                                Gross margin
+                              </span>
+                              <div
+                                style={{
+                                  fontWeight: 700,
+                                  fontSize: 16,
+                                  color: r.estimatedMargin >= 30 ? "#16a34a" : r.estimatedMargin >= 15 ? "#d97706" : "#dc2626",
+                                }}
+                              >
+                                {r.estimatedMargin.toFixed(1)}%
+                              </div>
                             </div>
-                          </div>
+                            <div>
+                              <span className="muted" style={{ fontSize: 12 }}>
+                                Net profit
+                              </span>
+                              {(() => {
+                                const net = r.avgSoldPrice * 0.87 - 4 - r.currentPrice;
+                                return (
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      fontSize: 16,
+                                      color: net >= 5 ? "#16a34a" : net >= 0 ? "#d97706" : "#dc2626",
+                                    }}
+                                  >
+                                    £{net.toFixed(2)}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </>
                         )}
                         {r.condition && (
                           <div>

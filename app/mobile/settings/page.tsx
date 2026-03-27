@@ -23,19 +23,19 @@ const sections = [
     title: "Manage",
     items: [
       {
-        href: "/locations",
+        href: "/mobile/locations",
         label: "Locations",
         hint: "Manage box and bay codes",
         icon: "📍",
       },
       {
-        href: "/inventory/archive",
+        href: "/mobile/inventory/archive",
         label: "Archived inventory",
         hint: "Restore or permanently delete stock",
         icon: "🗃️",
       },
       {
-        href: "/sales/archive",
+        href: "/mobile/sales/archive",
         label: "Archived sales",
         hint: "Review old completed orders",
         icon: "🗃️",

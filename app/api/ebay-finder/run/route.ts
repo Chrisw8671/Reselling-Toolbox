@@ -33,6 +33,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
+  // 2. Get sold price data once — same keywords/condition for all listings
+  const soldData = await getSoldPriceData({
+    keywords: search.keywords,
+    condition: search.condition,
+  }).catch(() => null);
+
   let totalProcessed = 0;
   let profitable = 0;
   let analysed = 0;
@@ -40,47 +46,41 @@ export async function POST(req: Request) {
   for (const listing of listings) {
     totalProcessed++;
 
-    // 2. Get sold price data for this item
-    const soldData = await getSoldPriceData({
-      keywords: search.keywords,
-      condition: search.condition,
-    }).catch(() => null);
-
     if (!soldData || soldData.avgSoldPrice <= 0) {
-      // Save without price comparison
-      await prisma.ebaySearchResult.upsert({
-        where: {
-          // Use a compound approach by checking for existing record
-          id: (
-            await prisma.ebaySearchResult.findFirst({
-              where: { searchId, ebayItemId: listing.ebayItemId },
-              select: { id: true },
-            })
-          )?.id ?? "new-" + listing.ebayItemId,
-        },
-        update: {
-          title: listing.title,
-          currentPrice: listing.currentPrice,
-          imageUrl: listing.imageUrl,
-          itemUrl: listing.itemUrl,
-          condition: listing.condition,
-          avgSoldPrice: null,
-          soldSampleSize: null,
-          estimatedMargin: null,
-          status: "pending",
-          scannedAt: new Date(),
-        },
-        create: {
-          searchId,
-          ebayItemId: listing.ebayItemId,
-          title: listing.title,
-          currentPrice: listing.currentPrice,
-          imageUrl: listing.imageUrl,
-          itemUrl: listing.itemUrl,
-          condition: listing.condition,
-          status: "pending",
-        },
+      const existing = await prisma.ebaySearchResult.findFirst({
+        where: { searchId, ebayItemId: listing.ebayItemId },
+        select: { id: true },
       });
+      if (existing) {
+        await prisma.ebaySearchResult.update({
+          where: { id: existing.id },
+          data: {
+            title: listing.title,
+            currentPrice: listing.currentPrice,
+            imageUrl: listing.imageUrl,
+            itemUrl: listing.itemUrl,
+            condition: listing.condition,
+            avgSoldPrice: null,
+            soldSampleSize: null,
+            estimatedMargin: null,
+            status: "pending",
+            scannedAt: new Date(),
+          },
+        });
+      } else {
+        await prisma.ebaySearchResult.create({
+          data: {
+            searchId,
+            ebayItemId: listing.ebayItemId,
+            title: listing.title,
+            currentPrice: listing.currentPrice,
+            imageUrl: listing.imageUrl,
+            itemUrl: listing.itemUrl,
+            condition: listing.condition,
+            status: "pending",
+          },
+        });
+      }
       continue;
     }
 

@@ -109,7 +109,7 @@ export const ui = {
   sectionLabel:
     "mb-2.5 text-[11px] font-extrabold uppercase tracking-[0.6px] text-app-muted",
   navHeader:
-    "sticky top-0 z-[100] flex h-[66px] items-center justify-between border-b border-app-border bg-[color-mix(in_srgb,var(--panel)_88%,transparent)] px-4 backdrop-blur-[10px] max-md:h-[60px] max-md:px-2.5",
+    "sticky top-0 z-[100] flex h-[66px] items-center justify-between border-b border-app-border bg-[color-mix(in_srgb,var(--panel)_88%,transparent)] px-4 backdrop-blur-[10px] max-md:hidden max-md:h-[60px] max-md:px-2.5",
   navDesktopGroup: "flex items-center gap-2.5 max-md:hidden",
   navMobileGroup: "hidden items-center gap-2.5 max-md:flex",
   logoLink: "inline-flex items-center",
